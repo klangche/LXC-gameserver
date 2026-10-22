@@ -24,7 +24,9 @@ What happens:
 4. **Passwords**: every password the game has is asked (empty = random). Change them later with `password` (opens all of them in nano), then run `restart`.
 5. **Install**: the game server and the commands (`start`, `stop`, `restart`, `status`, `serverlog`, `logs`, `update`, `versions`, `backup`, `password`, `server-help`) are installed in the LXC and started.
 
-Optional variables: `var_game` (skip the question), `var_cpu`, `var_ram`, `var_disk` (override the game's defaults), `var_os`, `var_ctid`, `var_servername`, `var_version`, and any other variable the community-scripts helper accepts.
+6. **MCP server (optional)**: asked "Add an MCP server?". If yes, an MCP container (filesystem access to the game's folder, SSE on port 8000) runs next to the game, so opencode or a similar LLM tool on the same network can read logs/configs and make changes: `http://<lxc-ip>:8000/sse`. It has **no authentication**, so only use it on a trusted LAN and never forward port 8000. Skip the question with `var_mcp="yes"` or `var_mcp="no"`.
+
+Optional variables: `var_game`, `var_mcp` (skip the question), `var_cpu`, `var_ram`, `var_disk` (override the game's defaults), `var_os`, `var_ctid`, `var_servername`, `var_version`, and any other variable the community-scripts helper accepts.
 
 ## Games
 
@@ -35,9 +37,9 @@ Optional variables: `var_game` (skip the question), `var_cpu`, `var_ram`, `var_d
 | Windrose | [games/windrose](games/windrose) | yes | server password | 7777/udp+tcp, 7778/udp |
 | Minecraft (Java) | [games/minecraft](games/minecraft) | yes | RCON password | 25565/tcp |
 | Rust | [games/rust](games/rust) | yes | RCON password | 28015/udp, 28016/tcp, 28082/tcp |
-| CS:GO | [games/csgo](games/csgo) | yes | server password, RCON password, Steam GSLT token | 27015/tcp+udp |
+| Counter-Strike 2 | [games/cs2](games/cs2) | yes | server password, RCON password, Steam GSLT token | 27015/tcp+udp |
 
-Notes: CS:GO was replaced by Counter-Strike 2; the `csgo` folder runs the CS2 server image and needs a Steam [Game Server Login Token](https://steamcommunity.com/dev/managegameservers) (app 730). Game images are community-maintained; check their documentation if an environment variable changes. Forward the listed ports on your router.
+Notes: CS2 is the only Counter-Strike variant (CS:GO is not supported). It needs a Steam [Game Server Login Token](https://steamcommunity.com/dev/managegameservers) (app 730). Game images are community-maintained; check their documentation if an environment variable changes. Forward the listed ports on your router.
 
 ## Folder layout
 

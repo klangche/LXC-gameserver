@@ -24,12 +24,12 @@ BIN=/usr/local/bin
 
 write_conf() {
   case "$1" in
-    csgo)
+    cs2)
       cat > "$CONF" <<'CONFEOF'
-GAME=csgo
+GAME=cs2
 MODE=docker
-DIR=/opt/csgo
-CONTAINER=csgo
+DIR=/opt/cs2
+CONTAINER=cs2
 GAME_LOG=
 DATA_DIR=data
 SAVE_SUB=.
@@ -55,10 +55,10 @@ then
   if [ -z "$GAME" ]
   then
     echo "Fråga 1: Vilket spel gäller den här servern?"
-    echo "  1) csgo"
+    echo "  1) cs2"
     read -r -p "Välj nummer eller namn: " ANS
     case "$ANS" in
-      1|csgo) GAME=csgo ;;
+      1|cs2) GAME=cs2 ;;
       *) GAME="$ANS" ;;
     esac
   fi

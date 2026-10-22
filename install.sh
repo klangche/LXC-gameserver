@@ -20,7 +20,7 @@ while IFS= read -r g
 do
   [ -n "$g" ] && GAMES+=("$g")
 done < <(curl -fsSL "$GS_API" 2> /dev/null | grep -oE '"name": *"[a-z0-9_-]+"' | sed -E 's/.*"([^"]+)"$/\1/' | sort)
-[ "${#GAMES[@]}" -gt 0 ] || GAMES=(csgo enshrouded minecraft rust valheim windrose)
+[ "${#GAMES[@]}" -gt 0 ] || GAMES=(cs2 enshrouded minecraft rust valheim windrose)
 
 CHOICE="${var_game:-}"
 if [ -z "$CHOICE" ]
@@ -106,6 +106,14 @@ do
   done
 done
 
+# ---- 3b. Optional MCP server (for opencode or similar LLM tools on the same network) ----
+MCP="${var_mcp:-}"
+if [ -z "$MCP" ]
+then
+  read -r -p "Add an MCP server to this LXC so an LLM tool (opencode etc.) on your network can troubleshoot/change the server files? [y/N]: " MCP
+fi
+case "$MCP" in [yY]*|1|true) MCP=yes ;; *) MCP=no ;; esac
+
 # ---- 4. Create the LXC with the community-scripts Docker helper ----
 export var_cpu="${var_cpu:-$GAME_CPU}" var_ram="${var_ram:-$GAME_RAM}" var_disk="${var_disk:-$GAME_DISK}"
 export var_os="${var_os:-debian}"
@@ -142,7 +150,26 @@ printf 'SERVER_NAME=%s\nWORLD_NAME=%s\n' "$HOSTNAME_CT" "$WORLD" | pct exec "$CT
 pct exec "$CTID" -- bash "$DIR/install-server-commands.sh" "$GAME"
 pct exec "$CTID" -- bash -c ". /usr/local/lib/gameserver/common.sh && gs_start"
 
+if [ "$MCP" = "yes" ]
+then
+  pct exec "$CTID" -- mkdir -p /opt/mcp
+  cat << EOF | pct exec "$CTID" -- tee /opt/mcp/docker-compose.yml > /dev/null
+services:
+  mcp:
+    image: node:22-alpine
+    container_name: mcp
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      - $DIR:/data
+    command: npx -y supergateway --stdio "npx -y @modelcontextprotocol/server-filesystem /data" --port 8000 --baseUrl http://localhost:8000
+EOF
+  pct exec "$CTID" -- bash -c "cd /opt/mcp && docker compose up -d"
+fi
+
 IP="$(pct exec "$CTID" -- hostname -I 2> /dev/null | awk '{print $1}')"
 echo
 echo "Done. $TITLE server '$HOSTNAME_CT' (CT $CTID) is starting at ${IP:-unknown}."
 echo "Enter it with: pct enter $CTID   (commands: server-help, password, serverlog, ...)"
+[ "$MCP" = "yes" ] && echo "MCP server (SSE, no authentication, LAN only): http://${IP:-<lxc-ip>}:8000/sse  (files of $DIR)"
