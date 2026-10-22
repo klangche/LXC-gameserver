@@ -1,0 +1,16 @@
+services:
+  csgo:
+    image: joedwards32/cs2:latest
+    container_name: csgo
+    restart: unless-stopped
+    ports:
+      - "27015:27015/tcp"
+      - "27015:27015/udp"
+    env_file:
+      - passwords.env
+    environment:
+      - CS2_SERVERNAME=${SERVER_NAME}
+      - CS2_PORT=27015
+      - CS2_MAXPLAYERS=10
+    volumes:
+      - ./data:/home/steam/cs2-dedicated
