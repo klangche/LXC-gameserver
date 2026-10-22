@@ -6,15 +6,17 @@ Every LXC gets **Docker** installed (so you can add more containers later), a Do
 
 ## How to use
 
-Run on the **Proxmox VE host shell** (copy the line for your game):
+Run on the **Proxmox VE host shell**. The script shows a list of games; pick a number or start typing a name to filter:
 
 ```bash
-var_cpu="4" var_ram="8192" var_disk="30" var_os='debian' bash -c "$(curl -fsSL https://raw.githubusercontent.com/klangche/LXC-gameserver/main/games/enshrouded/enshrouded.sh)"
+var_cpu="4" var_ram="8192" var_disk="30" var_os='debian' bash -c "$(curl -fsSL https://raw.githubusercontent.com/klangche/LXC-gameserver/main/install.sh)"
 ```
+
+Or skip the question by pasting the line for one game directly (e.g. Valheim: `.../main/games/valheim/valheim.sh`; see each game's folder), or set `var_game="valheim"`.
 
 The script asks:
 
-1. **Game**: decided by the script you paste (one folder per game).
+1. **Game**: chosen from a list (type a number or part of the name), or decided by the game script you paste.
 2. **Servername**: some games allow skipping it (see table).
    - LXC name is `gameserver-<game>` (skipped) or `gameserver-<game>-<servername>`, e.g. `gameserver-enshrouded`, `gameserver-valheim-friends`.
    - The in-game server name is the LXC name.
