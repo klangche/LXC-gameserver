@@ -26,6 +26,10 @@ What happens:
 
 Optional variables: `var_game` (skip the question), `var_cpu`, `var_ram`, `var_disk` (override the game's defaults), `var_os`, `var_ctid`, `var_servername`, `var_version`, and any other variable the community-scripts helper accepts.
 
+## Optional MCP server
+
+The installer asks whether to add an MCP server container (`var_mcp=yes|no` to skip the question). It runs next to the game in the LXC ([mcp/docker-compose.yml](mcp/docker-compose.yml)) and exposes the filesystem tools for `/opt` (game compose files, passwords, configs) over streamable HTTP at `http://<lxc-ip>:8000/mcp`. Point opencode or a similar client on the same network at it for troubleshooting and changes. There is **no authentication**: keep it on a trusted LAN and never forward port 8000.
+
 ## Games
 
 | Game | Folder | Servername skippable | Passwords asked | Ports |
@@ -35,9 +39,9 @@ Optional variables: `var_game` (skip the question), `var_cpu`, `var_ram`, `var_d
 | Windrose | [games/windrose](games/windrose) | yes | server password | 7777/udp+tcp, 7778/udp |
 | Minecraft (Java) | [games/minecraft](games/minecraft) | yes | RCON password | 25565/tcp |
 | Rust | [games/rust](games/rust) | yes | RCON password | 28015/udp, 28016/tcp, 28082/tcp |
-| CS:GO | [games/csgo](games/csgo) | yes | server password, RCON password, Steam GSLT token | 27015/tcp+udp |
+| Counter-Strike 2 | [games/cs2](games/cs2) | yes | server password, RCON password, Steam GSLT token | 27015/tcp+udp |
 
-Notes: CS:GO was replaced by Counter-Strike 2; the `csgo` folder runs the CS2 server image and needs a Steam [Game Server Login Token](https://steamcommunity.com/dev/managegameservers) (app 730). Game images are community-maintained; check their documentation if an environment variable changes. Forward the listed ports on your router.
+Notes: Counter-Strike 2 needs a Steam [Game Server Login Token](https://steamcommunity.com/dev/managegameservers) (app 730). Game images are community-maintained; check their documentation if an environment variable changes. Forward the listed ports on your router.
 
 ## Folder layout
 
@@ -48,7 +52,10 @@ games/<game>/
   passwords.env                password template (filled in on first launch)
   install-server-commands.sh   installs start/stop/status/... inside the LXC
   README.md                    game info
+mcp/docker-compose.yml         optional MCP server
 ```
+
+Every game folder has its own README with ports, passwords and LXC name.
 
 ## Submit a new game
 
