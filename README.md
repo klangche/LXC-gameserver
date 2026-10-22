@@ -2,25 +2,29 @@
 
 One-line Proxmox VE scripts that create a ready-to-play game server in an LXC container. Style and idea follow the [community-scripts](https://community-scripts.org/) helper scripts (`var_cpu`, `var_ram`, `var_disk`, `var_os`).
 
-Every LXC gets **Docker** installed (so you can add more containers later), a Docker-based game server, and the same set of management commands (`start`, `stop`, `restart`, `status`, `serverlog`, `logs`, `update`, `versions`, `backup`, `password`, `server-help`).
+Every LXC is created by the community-scripts Docker helper, so it gets **Docker** (so you can add more containers later), a Docker-based game server, and the same set of management commands (`start`, `stop`, `restart`, `status`, `serverlog`, `logs`, `update`, `versions`, `backup`, `password`, `server-help`).
 
 ## How to use
 
-Run on the **Proxmox VE host shell** (copy the line for your game):
+Paste this in the **Proxmox VE host shell** (the same line for every game):
 
 ```bash
-var_cpu="4" var_ram="8192" var_disk="30" var_os='debian' bash -c "$(curl -fsSL https://raw.githubusercontent.com/klangche/LXC-gameserver/main/games/enshrouded/enshrouded.sh)"
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/klangche/LXC-gameserver/main/install.sh)"
 ```
 
-The script asks:
+What happens:
 
-1. **Game**: decided by the script you paste (one folder per game).
-2. **Servername**: some games allow skipping it (see table).
-   - LXC name is `gameserver-<game>` (skipped) or `gameserver-<game>-<servername>`, e.g. `gameserver-enshrouded`, `gameserver-valheim-friends`.
+1. **Game**: the shell asks which game (pick a number or type part of the name to filter).
+2. **Settings**: CPU, RAM and disk are set for that game, then the community-scripts Docker helper (`ct/docker.sh`) is run with them, e.g. for Enshrouded:
+   `var_cpu="4" var_ram="8192" var_disk="30" var_os='debian' bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/docker.sh)"`
+   It creates the LXC with Docker. You can still adjust its settings in its own menu.
+3. **Servername**: some games allow skipping it (see table).
+   - LXC name is `gameserver-<game>` (skipped) or `gameserver-<game>-<servername>`, e.g. `gameserver-valheim-friends`.
    - The in-game server name is the LXC name.
-3. **Passwords**: every password the game has is asked on first launch (empty = random). Change them later with `password` (opens all of them in nano), then run `restart`.
+4. **Passwords**: every password the game has is asked (empty = random). Change them later with `password` (opens all of them in nano), then run `restart`.
+5. **Install**: the game server and the commands (`start`, `stop`, `restart`, `status`, `serverlog`, `logs`, `update`, `versions`, `backup`, `password`, `server-help`) are installed in the LXC and started.
 
-Optional variables: `var_storage` (default `local-lvm`), `var_template_storage`, `var_bridge`, `var_ctid`, `var_servername`, `var_version`.
+Optional variables: `var_game` (skip the question), `var_cpu`, `var_ram`, `var_disk` (override the game's defaults), `var_os`, `var_ctid`, `var_servername`, `var_version`, and any other variable the community-scripts helper accepts.
 
 ## Games
 
@@ -39,11 +43,11 @@ Notes: CS:GO was replaced by Counter-Strike 2; the `csgo` folder runs the CS2 se
 
 ```
 games/<game>/
-  <game>.sh                    Proxmox host script (the one you paste)
+  game.conf                    name, passwords, default CPU/RAM/disk
   docker-compose.yml           the game server
   passwords.env                password template (filled in on first launch)
   install-server-commands.sh   installs start/stop/status/... inside the LXC
-  README.md                    paste-ready command and game info
+  README.md                    game info
 ```
 
 ## Submit a new game

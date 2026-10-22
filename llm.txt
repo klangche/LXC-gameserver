@@ -4,9 +4,10 @@ Repo purpose: Proxmox VE host scripts that create an LXC (Debian/Ubuntu) with Do
 plus a uniform set of in-LXC commands. One folder per game: games/<game>/ (lowercase, no spaces, e.g. "valheim").
 
 ## Required files in games/<game>/
-1. <game>.sh                   Proxmox host script. Copy games/valheim/valheim.sh and change ONLY the header values:
-                               GAME, TITLE, SERVERNAME_SKIPPABLE ("yes"/"no"), PASSWORDS=("KEY|Label" ...),
-                               default var_cpu/var_ram/var_disk, and the usage comment at the top.
+1. game.conf                  Copy games/valheim/game.conf and change the values: GAME, TITLE,
+                               SERVERNAME_SKIPPABLE ("yes"/"no"), PASSWORDS=("KEY|Label" ...), GAME_CPU/GAME_RAM/GAME_DISK.
+                               The root install.sh lists games/ automatically, asks for the game, then runs the
+                               community-scripts docker.sh with these resources and installs the game inside the LXC.
 2. docker-compose.yml          The server. Must use `env_file: passwords.env`, take the server name from `${SERVER_NAME}`
                                (and `${WORLD_NAME}` if the game has a world name) and publish the game ports.
                                container_name must equal <game>. Bind-mount data under ./ (e.g. ./data).
@@ -16,13 +17,13 @@ plus a uniform set of in-LXC commands. One folder per game: games/<game>/ (lower
                                GAME MODE=docker DIR=/opt/<game> CONTAINER=<game> GAME_LOG (empty = docker logs)
                                DATA_DIR SAVE_SUB (relative to DIR, backed up) SECRETS_FILE=passwords.env
                                APP_ID (empty if the image updates itself) INSTALL_DIR
-5. README.md                   Paste-ready one-liner, ports, passwords, servername skippable yes/no.
+5. README.md                   Ports, passwords, servername skippable yes/no.
 Also add the game to the table in the root README.md.
 
 ## Rules
 - LXC name is always gameserver-<game> or, if a servername is given, gameserver-<game>-<servername>. Servername is asked
   for every game; set SERVERNAME_SKIPPABLE="yes" if the game works without one, "no" if it needs one.
-- Docker is always installed in the LXC (the host script does this).
+- Docker is always installed in the LXC (community-scripts docker.sh does this).
 - EVERY password/secret the game has (join password, admin password, RCON, role passwords, tokens) must be listed in
   PASSWORDS and passwords.env. They are asked on first launch (empty = random) and editable later with `password` (nano).
 - Passwords are limited to A-Z a-z 0-9 _ . @ - (min 5 chars) so they are safe in env files.
