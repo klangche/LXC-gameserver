@@ -1,0 +1,18 @@
+services:
+  minecraft:
+    image: itzg/minecraft-server:latest
+    container_name: minecraft
+    restart: unless-stopped
+    stdin_open: true
+    tty: true
+    ports:
+      - "25565:25565/tcp"
+    env_file:
+      - passwords.env
+    environment:
+      - EULA=TRUE
+      - MOTD=${SERVER_NAME}
+      - MEMORY=4G
+      - ENABLE_RCON=true
+    volumes:
+      - ./data:/data

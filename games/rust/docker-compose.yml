@@ -1,0 +1,19 @@
+services:
+  rust:
+    image: didstopia/rust-server:latest
+    container_name: rust
+    restart: unless-stopped
+    stop_grace_period: 60s
+    ports:
+      - "28015:28015/udp"
+      - "28016:28016/tcp"
+      - "28082:28082/tcp"
+    env_file:
+      - passwords.env
+    environment:
+      - RUST_SERVER_NAME=${SERVER_NAME}
+      - RUST_SERVER_IDENTITY=docker
+      - RUST_SERVER_MAXPLAYERS=50
+      - RUST_SERVER_STARTUP_ARGUMENTS=-batchmode -load -nographics +server.secure 1
+    volumes:
+      - ./data:/steamcmd/rust

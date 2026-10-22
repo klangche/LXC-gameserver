@@ -1,0 +1,28 @@
+services:
+  windrose:
+    image: ghcr.io/uberdudepl/windrose-dedicated-server-docker:latest
+    container_name: windrose
+    hostname: localhost
+    restart: unless-stopped
+    stop_grace_period: 90s
+    network_mode: host
+    env_file:
+      - passwords.env
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - STEAM_LOGIN=anonymous
+      - WINDROSE_APP_ID=4129620
+      - UPDATE_ON_START=true
+      - GENERATE_SETTINGS=true
+      - SERVER_NAME=${SERVER_NAME}
+      - MAX_PLAYERS=4
+      - PORT=7777
+      - QUERYPORT=7778
+      - WINEARCH=win64
+      - WINEPREFIX=/home/steam/.wine
+      - WINEDEBUG=-all
+      - DISPLAY=:99
+    volumes:
+      - ./data:/data
+      - ./steam-home:/home/steam
