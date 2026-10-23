@@ -3,7 +3,7 @@
 #   bash -c "$(curl -fsSL https://raw.githubusercontent.com/klangche/LXC-gameserver/main/install.sh)"
 # Asks for the game, runs the community-scripts Docker helper with the game's settings,
 # then installs the game server, passwords and management commands inside the LXC.
-# Optional: var_game, var_cpu, var_ram, var_disk, var_os, var_ctid, var_servername, var_version, GS_RAW
+# Optional: var_mcp (yes/no), var_game, var_cpu, var_ram, var_disk, var_os, var_ctid, var_servername, var_version, GS_RAW
 set -euo pipefail
 
 GS_RAW="${GS_RAW:-https://raw.githubusercontent.com/klangche/LXC-gameserver/main}"
@@ -106,13 +106,13 @@ do
   done
 done
 
-# ---- 3b. Optional MCP server (for opencode or similar LLM tools on the same network) ----
+# ---- 3b. Optional MCP server ----
 MCP="${var_mcp:-}"
 if [ -z "$MCP" ]
 then
-  read -r -p "Add an MCP server to this LXC so an LLM tool (opencode etc.) on your network can troubleshoot/change the server files? [y/N]: " MCP
+  read -r -p "Add an MCP server container (for opencode or similar on the same network, no authentication)? [y/N]: " MCP
 fi
-case "$MCP" in [yY]*|1|true) MCP=yes ;; *) MCP=no ;; esac
+case "$MCP" in y | Y | yes | YES | 1 | true) MCP=yes ;; *) MCP=no ;; esac
 
 # ---- 4. Create the LXC with the community-scripts Docker helper ----
 export var_cpu="${var_cpu:-$GAME_CPU}" var_ram="${var_ram:-$GAME_RAM}" var_disk="${var_disk:-$GAME_DISK}"
@@ -153,23 +153,12 @@ pct exec "$CTID" -- bash -c ". /usr/local/lib/gameserver/common.sh && gs_start"
 if [ "$MCP" = "yes" ]
 then
   pct exec "$CTID" -- mkdir -p /opt/mcp
-  cat << EOF | pct exec "$CTID" -- tee /opt/mcp/docker-compose.yml > /dev/null
-services:
-  mcp:
-    image: node:22-alpine
-    container_name: mcp
-    restart: unless-stopped
-    ports:
-      - "8000:8000"
-    volumes:
-      - $DIR:/data
-    command: npx -y supergateway --stdio "npx -y @modelcontextprotocol/server-filesystem /data" --port 8000 --baseUrl http://localhost:8000
-EOF
-  pct exec "$CTID" -- bash -c "cd /opt/mcp && docker compose up -d"
+  curl -fsSL "$GS_RAW/mcp/docker-compose.yml" | pct exec "$CTID" -- tee /opt/mcp/docker-compose.yml > /dev/null
+  pct exec "$CTID" -- docker compose -f /opt/mcp/docker-compose.yml up -d
 fi
 
 IP="$(pct exec "$CTID" -- hostname -I 2> /dev/null | awk '{print $1}')"
 echo
 echo "Done. $TITLE server '$HOSTNAME_CT' (CT $CTID) is starting at ${IP:-unknown}."
+[ "$MCP" = "yes" ] && echo "MCP server (streamable HTTP, filesystem access to /opt) at http://${IP:-unknown}:8000/mcp - LAN only, no authentication."
 echo "Enter it with: pct enter $CTID   (commands: server-help, password, serverlog, ...)"
-[ "$MCP" = "yes" ] && echo "MCP server (SSE, no authentication, LAN only): http://${IP:-<lxc-ip>}:8000/sse  (files of $DIR)"

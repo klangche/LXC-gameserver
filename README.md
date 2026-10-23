@@ -24,9 +24,11 @@ What happens:
 4. **Passwords**: every password the game has is asked (empty = random). Change them later with `password` (opens all of them in nano), then run `restart`.
 5. **Install**: the game server and the commands (`start`, `stop`, `restart`, `status`, `serverlog`, `logs`, `update`, `versions`, `backup`, `password`, `server-help`) are installed in the LXC and started.
 
-6. **MCP server (optional)**: asked "Add an MCP server?". If yes, an MCP container (filesystem access to the game's folder, SSE on port 8000) runs next to the game, so opencode or a similar LLM tool on the same network can read logs/configs and make changes: `http://<lxc-ip>:8000/sse`. It has **no authentication**, so only use it on a trusted LAN and never forward port 8000. Skip the question with `var_mcp="yes"` or `var_mcp="no"`.
+Optional variables: `var_game` (skip the question), `var_cpu`, `var_ram`, `var_disk` (override the game's defaults), `var_os`, `var_ctid`, `var_servername`, `var_version`, and any other variable the community-scripts helper accepts.
 
-Optional variables: `var_game`, `var_mcp` (skip the question), `var_cpu`, `var_ram`, `var_disk` (override the game's defaults), `var_os`, `var_ctid`, `var_servername`, `var_version`, and any other variable the community-scripts helper accepts.
+## Optional MCP server
+
+The installer asks whether to add an MCP server container (`var_mcp=yes|no` to skip the question). It runs next to the game in the LXC ([mcp/docker-compose.yml](mcp/docker-compose.yml)) and exposes the filesystem tools for `/opt` (game compose files, passwords, configs) over streamable HTTP at `http://<lxc-ip>:8000/mcp`. Point opencode or a similar client on the same network at it for troubleshooting and changes. There is **no authentication**: keep it on a trusted LAN and never forward port 8000.
 
 ## Games
 
@@ -39,7 +41,7 @@ Optional variables: `var_game`, `var_mcp` (skip the question), `var_cpu`, `var_r
 | Rust | [games/rust](games/rust) | yes | RCON password | 28015/udp, 28016/tcp, 28082/tcp |
 | Counter-Strike 2 | [games/cs2](games/cs2) | yes | server password, RCON password, Steam GSLT token | 27015/tcp+udp |
 
-Notes: CS2 is the only Counter-Strike variant (CS:GO is not supported). It needs a Steam [Game Server Login Token](https://steamcommunity.com/dev/managegameservers) (app 730). Game images are community-maintained; check their documentation if an environment variable changes. Forward the listed ports on your router.
+Notes: Counter-Strike 2 needs a Steam [Game Server Login Token](https://steamcommunity.com/dev/managegameservers) (app 730). Game images are community-maintained; check their documentation if an environment variable changes. Forward the listed ports on your router.
 
 ## Folder layout
 
@@ -50,7 +52,10 @@ games/<game>/
   passwords.env                password template (filled in on first launch)
   install-server-commands.sh   installs start/stop/status/... inside the LXC
   README.md                    game info
+mcp/docker-compose.yml         optional MCP server
 ```
+
+Every game folder has its own README with ports, passwords and LXC name.
 
 ## Submit a new game
 

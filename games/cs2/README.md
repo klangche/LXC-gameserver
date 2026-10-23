@@ -1,4 +1,4 @@
-# Counter-Strike 2 (CS2)
+# Counter-Strike 2
 
 Use the main command from the [top-level README](../../README.md) and pick `cs2` when asked (or set `var_game="cs2"`).
 
