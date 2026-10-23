@@ -1,0 +1,14 @@
+services:
+  mcp:
+    image: node:22-alpine
+    container_name: mcp
+    restart: unless-stopped
+    working_dir: /opt
+    command: >
+      npx -y supergateway
+      --stdio "npx -y @modelcontextprotocol/server-filesystem /opt"
+      --port 8000 --outputTransport streamableHttp
+    ports:
+      - "8000:8000"
+    volumes:
+      - /opt:/opt
