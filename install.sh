@@ -67,21 +67,23 @@ echo "=== $TITLE gameserver ==="
 # ---- 2. Servername ----
 slug() { echo "$1" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9]+/-/g; s/^-+|-+$//g'; }
 SERVERNAME="${var_servername:-}"
-if [ -z "$SERVERNAME" ]
-then
-  if [ "$SERVERNAME_SKIPPABLE" = "yes" ]
+SIGHTHOUNDS=(afghan-hound azawakh borzoi galgo greyhound irish-wolfhound italian-greyhound saluki scottish-deerhound sloughi whippet)
+while [ -z "$(slug "$SERVERNAME")" ]
+do
+  if [ -z "$SERVERNAME" ]
   then
-    read -r -p "Servername (empty = skip, LXC name becomes gameserver-$GAME): " SERVERNAME
+    read -r -p "Servername (enter your own, or leave empty for a random sighthound breed): " SERVERNAME
+    if [ -z "$SERVERNAME" ]
+    then
+      SERVERNAME="${SIGHTHOUNDS[$((RANDOM % ${#SIGHTHOUNDS[@]}))]}"
+      echo "  Random servername: $SERVERNAME"
+    fi
   else
-    while [ -z "$(slug "$SERVERNAME")" ]
-    do
-      read -r -p "Servername (required for $TITLE, LXC name becomes gameserver-$GAME-<servername>): " SERVERNAME
-    done
+    read -r -p "Servername must contain letters or numbers; try again: " SERVERNAME
   fi
-fi
+done
 SLUG="$(slug "$SERVERNAME")"
-HOSTNAME_CT="gameserver-$GAME"
-[ -n "$SLUG" ] && HOSTNAME_CT="$HOSTNAME_CT-$SLUG"
+HOSTNAME_CT="gameserver-$GAME-$SLUG"
 HOSTNAME_CT="${HOSTNAME_CT:0:63}"
 echo "LXC name: $HOSTNAME_CT"
 

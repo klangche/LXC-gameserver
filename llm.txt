@@ -5,7 +5,7 @@ plus a uniform set of in-LXC commands. One folder per game: games/<game>/ (lower
 
 ## Required files in games/<game>/
 1. game.conf                  Copy games/valheim/game.conf and change the values: GAME, TITLE,
-                               SERVERNAME_SKIPPABLE ("yes"/"no"), PASSWORDS=("KEY|Label" ...), GAME_CPU/GAME_RAM/GAME_DISK.
+                               PASSWORDS=("KEY|Label" ...), GAME_CPU/GAME_RAM/GAME_DISK.
                                The root install.sh lists games/ automatically, asks for the game, then runs the
                                community-scripts docker.sh with these resources and installs the game inside the LXC.
 2. docker-compose.yml          The server. Must use `env_file: passwords.env`, take the server name from `${SERVER_NAME}`
@@ -17,12 +17,12 @@ plus a uniform set of in-LXC commands. One folder per game: games/<game>/ (lower
                                GAME MODE=docker DIR=/opt/<game> CONTAINER=<game> GAME_LOG (empty = docker logs)
                                DATA_DIR SAVE_SUB (relative to DIR, backed up) SECRETS_FILE=passwords.env
                                APP_ID (empty if the image updates itself) INSTALL_DIR
-5. README.md                   Ports, passwords, servername skippable yes/no.
+5. README.md                   Ports, passwords, and the LXC name format.
 Also add the game to the table in the root README.md.
 
 ## Rules
-- LXC name is always gameserver-<game> or, if a servername is given, gameserver-<game>-<servername>. Servername is asked
-  for every game; set SERVERNAME_SKIPPABLE="yes" if the game works without one, "no" if it needs one.
+- Servername is always required: the user can enter one or leave it empty for a random sighthound breed. The LXC name is
+  always gameserver-<game>-<servername>.
 - Docker is always installed in the LXC (community-scripts docker.sh does this).
 - EVERY password/secret the game has (join password, admin password, RCON, role passwords, tokens) must be listed in
   PASSWORDS and passwords.env. They are asked on first launch (empty = random) and editable later with `password` (nano).
