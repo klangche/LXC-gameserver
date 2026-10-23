@@ -1,0 +1,15 @@
+# Random server-name candidates: sighthound breeds from https://en.wikipedia.org/wiki/Sighthound
+afghan-hound
+azawakh
+borzoi
+chart-polski
+galgo-espanol
+greyhound
+irish-wolfhound
+italian-greyhound
+magyar-agar
+saluki
+scottish-deerhound
+silken-windhound
+sloughi
+whippet

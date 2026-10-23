@@ -18,7 +18,7 @@ What happens:
 2. **Settings**: CPU, RAM and disk are set for that game, then the community-scripts Docker helper (`ct/docker.sh`) is run with them, e.g. for Enshrouded:
    `var_cpu="4" var_ram="8192" var_disk="30" var_os='debian' bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/docker.sh)"`
    It creates the LXC with Docker. You can still adjust its settings in its own menu.
-3. **Servername**: enter a name of your choice, or leave it empty to choose a random sighthound breed.
+3. **Servername**: enter a name of your choice, or leave it empty to choose a random server name. Random name candidates are listed in [`server-names.txt`](server-names.txt); add one name per line to include other breeds or animals.
    - LXC name is always `gameserver-<game>-<servername>`, e.g. `gameserver-valheim-friends` or `gameserver-valheim-whippet`.
    - The in-game server name is the LXC name.
 4. **Passwords**: every password the game has is asked (empty = random). Change them later with `password` (opens all of them in nano), then run `restart`.
@@ -53,6 +53,7 @@ games/<game>/
   install-server-commands.sh   installs start/stop/status/... inside the LXC
   README.md                    game info
 mcp/docker-compose.yml         optional MCP server
+server-names.txt               random server-name candidates
 ```
 
 Every game folder has its own README with ports, passwords and LXC name.

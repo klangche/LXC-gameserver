@@ -67,15 +67,20 @@ echo "=== $TITLE gameserver ==="
 # ---- 2. Servername ----
 slug() { echo "$1" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9]+/-/g; s/^-+|-+$//g'; }
 SERVERNAME="${var_servername:-}"
-SIGHTHOUNDS=(afghan-hound azawakh borzoi galgo greyhound irish-wolfhound italian-greyhound saluki scottish-deerhound sloughi whippet)
+SERVER_NAMES=()
 while [ -z "$(slug "$SERVERNAME")" ]
 do
   if [ -z "$SERVERNAME" ]
   then
-    read -r -p "Servername (enter your own, or leave empty for a random sighthound breed): " SERVERNAME
+    read -r -p "Servername (enter your own, or leave empty for a random server name): " SERVERNAME
     if [ -z "$SERVERNAME" ]
     then
-      SERVERNAME="${SIGHTHOUNDS[$((RANDOM % ${#SIGHTHOUNDS[@]}))]}"
+      if [ "${#SERVER_NAMES[@]}" -eq 0 ]
+      then
+        mapfile -t SERVER_NAMES < <(curl -fsSL "$GS_RAW/server-names.txt" | grep -vE '^[[:space:]]*(#|$)')
+        [ "${#SERVER_NAMES[@]}" -gt 0 ] || die "No random server names found in $GS_RAW/server-names.txt."
+      fi
+      SERVERNAME="${SERVER_NAMES[$((RANDOM % ${#SERVER_NAMES[@]}))]}"
       echo "  Random servername: $SERVERNAME"
     fi
   else
