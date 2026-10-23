@@ -21,7 +21,7 @@ plus a uniform set of in-LXC commands. One folder per game: games/<game>/ (lower
 Also add the game to the table in the root README.md.
 
 ## Rules
-- Servername is always required: the user can enter one or leave it empty for a random sighthound breed. The LXC name is
+- Servername is always required: the user can enter one or leave it empty for a random server name from server-names.txt. The LXC name is
   always gameserver-<game>-<servername>.
 - Docker is always installed in the LXC (community-scripts docker.sh does this).
 - EVERY password/secret the game has (join password, admin password, RCON, role passwords, tokens) must be listed in
