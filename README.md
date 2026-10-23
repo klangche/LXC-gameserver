@@ -18,8 +18,8 @@ What happens:
 2. **Settings**: CPU, RAM and disk are set for that game, then the community-scripts Docker helper (`ct/docker.sh`) is run with them, e.g. for Enshrouded:
    `var_cpu="4" var_ram="8192" var_disk="30" var_os='debian' bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/docker.sh)"`
    It creates the LXC with Docker. You can still adjust its settings in its own menu.
-3. **Servername**: some games allow skipping it (see table).
-   - LXC name is `gameserver-<game>` (skipped) or `gameserver-<game>-<servername>`, e.g. `gameserver-valheim-friends`.
+3. **Servername**: enter a name of your choice, or leave it empty to choose a random sighthound breed.
+   - LXC name is always `gameserver-<game>-<servername>`, e.g. `gameserver-valheim-friends` or `gameserver-valheim-whippet`.
    - The in-game server name is the LXC name.
 4. **Passwords**: every password the game has is asked (empty = random). Change them later with `password` (opens all of them in nano), then run `restart`.
 5. **Install**: the game server and the commands (`start`, `stop`, `restart`, `status`, `serverlog`, `logs`, `update`, `versions`, `backup`, `password`, `server-help`) are installed in the LXC and started.
@@ -32,14 +32,14 @@ The installer asks whether to add an MCP server container (`var_mcp=yes|no` to s
 
 ## Games
 
-| Game | Folder | Servername skippable | Passwords asked | Ports |
-|------|--------|----------------------|-----------------|-------|
-| Enshrouded | [games/enshrouded](games/enshrouded) | yes | Admin, Friend, Guest role passwords | 15636-15637/udp |
-| Valheim | [games/valheim](games/valheim) | no | server password (min 5 chars) | 2456-2458/udp |
-| Windrose | [games/windrose](games/windrose) | yes | server password | 7777/udp+tcp, 7778/udp |
-| Minecraft (Java) | [games/minecraft](games/minecraft) | yes | RCON password | 25565/tcp |
-| Rust | [games/rust](games/rust) | yes | RCON password | 28015/udp, 28016/tcp, 28082/tcp |
-| Counter-Strike 2 | [games/cs2](games/cs2) | yes | server password, RCON password, Steam GSLT token | 27015/tcp+udp |
+| Game | Folder | Passwords asked | Ports |
+|------|--------|-----------------|-------|
+| Enshrouded | [games/enshrouded](games/enshrouded) | Admin, Friend, Guest role passwords | 15636-15637/udp |
+| Valheim | [games/valheim](games/valheim) | server password (min 5 chars) | 2456-2458/udp |
+| Windrose | [games/windrose](games/windrose) | server password | 7777/udp+tcp, 7778/udp |
+| Minecraft (Java) | [games/minecraft](games/minecraft) | RCON password | 25565/tcp |
+| Rust | [games/rust](games/rust) | RCON password | 28015/udp, 28016/tcp, 28082/tcp |
+| Counter-Strike 2 | [games/cs2](games/cs2) | server password, RCON password, Steam GSLT token | 27015/tcp+udp |
 
 Notes: Counter-Strike 2 needs a Steam [Game Server Login Token](https://steamcommunity.com/dev/managegameservers) (app 730). Game images are community-maintained; check their documentation if an environment variable changes. Forward the listed ports on your router.
 
