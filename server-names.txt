@@ -1,4 +1,3 @@
-# Random server-name candidates: sighthound breeds from https://en.wikipedia.org/wiki/Sighthound
 AfghanHound
 Azawakh
 Borzoi
