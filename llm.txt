@@ -17,6 +17,10 @@ plus a uniform set of in-LXC commands. One folder per game: games/<game>/ (lower
                                GAME MODE=docker DIR=/opt/<game> CONTAINER=<game> GAME_LOG (empty = docker logs)
                                DATA_DIR SAVE_SUB (relative to DIR, backed up) SECRETS_FILE=passwords.env
                                APP_ID (empty if the image updates itself) INSTALL_DIR
+                               and for auto-update: PLAYER_QUERY (a2s:<query port>[,<port>...] for Steam A2S,
+                               minecraft for rcon-cli, empty if unknown), CHECK_APP_ID (Steam dedicated-server app id
+                               used to detect new builds, empty = only check for a newer image), VERSION_CHECK
+                               (minecraft or empty)
 5. README.md                   Ports, passwords, and the LXC name format.
 Also add the game to the table in the root README.md.
 
@@ -28,6 +32,8 @@ Also add the game to the table in the root README.md.
   PASSWORDS and passwords.env. They are asked on first launch (empty = random) and editable later with `password` (nano).
 - Passwords are limited to A-Z a-z 0-9 _ . @ - (min 5 chars) so they are safe in env files.
 - Prefer a maintained Docker image; verify env var names against its documentation.
+- install-server-commands.sh is the same in every game folder except write_conf and the "1) <game>" menu; keep it that way
+  (changes to the commands go into all games/*/install-server-commands.sh).
 - Native (systemd+steamcmd) is supported by the commands via MODE=native, but Docker is the default.
 - Validate: `bash -n`, `shellcheck`, `docker compose -f games/<game>/docker-compose.yml config`.
 - Commit messages/docs in English; the command scripts keep the existing Swedish messages.

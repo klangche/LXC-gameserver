@@ -2,7 +2,7 @@
 
 One-line Proxmox VE scripts that create a ready-to-play game server in an LXC container. Style and idea follow the [community-scripts](https://community-scripts.org/) helper scripts (`var_cpu`, `var_ram`, `var_disk`, `var_os`).
 
-Every LXC is created by the community-scripts Docker helper, so it gets **Docker** (so you can add more containers later), a Docker-based game server, and the same set of management commands (`start`, `stop`, `restart`, `status`, `serverlog`, `logs`, `update`, `versions`, `backup`, `password`, `server-help`).
+Every LXC is created by the community-scripts Docker helper, so it gets **Docker** (so you can add more containers later), a Docker-based game server, and the same set of management commands (`start`, `stop`, `restart`, `status`, `serverlog`, `logs`, `update`, `versions`, `backup`, `password`, `auto-update`, `server-help`).
 
 ## How to use
 
@@ -22,9 +22,21 @@ What happens:
    - LXC name is always `gameserver-<game>-<servername>`, e.g. `gameserver-valheim-friends` or `gameserver-valheim-whippet`.
    - The in-game server name is the LXC name.
 4. **Passwords**: every password the game has is asked (empty = random). Change them later with `password` (opens all of them in nano), then run `restart`.
-5. **Install**: the game server and the commands (`start`, `stop`, `restart`, `status`, `serverlog`, `logs`, `update`, `versions`, `backup`, `password`, `server-help`) are installed in the LXC and started.
+5. **Install**: the game server and the commands (`start`, `stop`, `restart`, `status`, `serverlog`, `logs`, `update`, `versions`, `backup`, `password`, `auto-update`, `server-help`) are installed in the LXC and started.
 
 Optional variables: `var_game` (skip the question), `var_cpu`, `var_ram`, `var_disk` (override the game's defaults), `var_os`, `var_ctid`, `var_servername`, `var_version`, and any other variable the community-scripts helper accepts.
+
+## Auto-update
+
+Type `auto-update` in the LXC shell. It shows the current settings and asks:
+
+1. **Auto-update**: ON → switch it OFF? / OFF → switch it ON?
+2. **Update even if players are online**: ON → switch it OFF? / OFF → switch it ON?
+3. **Update after how many minutes with no players online?** Only asked when question 2 is OFF. When it is ON, the server updates as soon as an update is found.
+
+When auto-update is on, a systemd timer (`gameserver-autoupdate.timer`) runs every minute. Every 30 minutes (`CHECK_EVERY` in `/etc/gameserver-autoupdate.conf`) it looks for a newer Docker image, a newer Steam build or a newer Minecraft release. When one is found it runs the normal `update` (backup first), right away or once the server has been empty for the chosen number of minutes. The player count comes from a Steam server query (A2S) on the game's query port, or from `rcon-cli list` for Minecraft. Servers you stopped yourself are left alone.
+
+Also: `auto-update on`, `auto-update off`, `auto-update status`, and `auto-update log` (log file: `/var/log/gameserver-autoupdate.log`).
 
 ## Optional MCP server
 
