@@ -452,7 +452,7 @@ AU_LOG=/var/log/gameserver-autoupdate.log
 AU_QUERY=/usr/local/lib/gameserver/gsquery.py
 
 gs_au_load() {
-  AUTO_UPDATE=off
+  AUTO_UPDATE=on
   UPDATE_WHEN_ONLINE=off
   IDLE_MINUTES=10
   CHECK_EVERY=30
@@ -904,10 +904,23 @@ mk lösenord 'gs_secrets "Sparade du? Kör nu: restart"'
 mk auto-update 'gs_autoupdate "$@"'
 mk server-help gs_help
 
-# Behåll timern påslagen efter en ominstallation om auto-update redan var på
-if grep -q '^AUTO_UPDATE=on' /etc/gameserver-autoupdate.conf 2>/dev/null
+# Standard: auto-update på, uppdatera bara när servern har varit tom i 10 minuter.
+# En befintlig inställning behålls vid ominstallation.
+if [ ! -f /etc/gameserver-autoupdate.conf ]
+then
+  cat > /etc/gameserver-autoupdate.conf <<'AUEOF'
+# Auto-update settings. Change them with: auto-update
+AUTO_UPDATE=on
+UPDATE_WHEN_ONLINE=off
+IDLE_MINUTES=10
+CHECK_EVERY=30
+AUEOF
+fi
+if grep -q '^AUTO_UPDATE=on' /etc/gameserver-autoupdate.conf
 then
   systemctl enable --now gameserver-autoupdate.timer > /dev/null 2>&1 || true
+else
+  systemctl disable --now gameserver-autoupdate.timer > /dev/null 2>&1 || true
 fi
 
 # Städa bort den gamla spelspecifika hjälpen och dess anrop

@@ -31,8 +31,10 @@ Optional variables: `var_game` (skip the question), `var_cpu`, `var_ram`, `var_d
 Type `auto-update` in the LXC shell. It shows the current settings and asks:
 
 1. **Auto-update**: ON → switch it OFF? / OFF → switch it ON?
-2. **Update even if players are online**: ON → switch it OFF? / OFF → switch it ON?
+2. **Update even if players are online**: ON → switch it OFF? / OFF → switch it ON? ON = update even while people are playing; OFF = wait until no one has been online for the minutes in question 3.
 3. **Update after how many minutes with no players online?** Only asked when question 2 is OFF. When it is ON, the server updates as soon as an update is found.
+
+Defaults on a new server: auto-update **ON**, update even if players are online **OFF**, update after **10** minutes with no players online. Re-running the install keeps your own settings.
 
 When auto-update is on, a systemd timer (`gameserver-autoupdate.timer`) runs every minute. Every 30 minutes (`CHECK_EVERY` in `/etc/gameserver-autoupdate.conf`) it looks for a newer Docker image, a newer Steam build or a newer Minecraft release. When one is found it runs the normal `update` (backup first), right away or once the server has been empty for the chosen number of minutes. The player count comes from a Steam server query (A2S) on the game's query port, or from `rcon-cli list` for Minecraft. Servers you stopped yourself are left alone.
 
