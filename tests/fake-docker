@@ -1,0 +1,13 @@
+#!/bin/bash
+# Fake docker for tests: container "enshrouded" running; compose commands are logged.
+echo "docker $*" >> /var/log/fake-docker.log
+case "$*" in
+  *"{{.State.Running}}"*) cat /run/fake-running 2>/dev/null || echo true ;;
+  *"{{.State.Status}} {{.RestartCount}}"*) echo "running 0" ;;
+  *NetworkSettings*) echo 127.0.0.1 ;;
+  "compose stop"*) echo false > /run/fake-running ;;
+  "compose up"*) echo true > /run/fake-running ;;
+  "compose -f "*" config -q") exit 0 ;;
+  "compose logs"*) echo "enshrouded  | server running" ;;
+  *) : ;;
+esac

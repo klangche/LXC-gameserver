@@ -12,11 +12,16 @@ plus a uniform set of in-LXC commands. One folder per game: games/<game>/ (lower
                                (and `${WORLD_NAME}` if the game has a world name) and publish the game ports.
                                container_name must equal <game>. Bind-mount data under ./ (e.g. ./data).
 3. passwords.env               Template: one `KEY=CHANGE_ME` per password. The KEYs must be the env var names the image reads.
-4. install-server-commands.sh  Copy games/valheim/install-server-commands.sh and change only: the case label/GAME name in
-                               write_conf and the "1) <game>" menu, plus the /etc/gameserver.conf block:
-                               GAME MODE=docker DIR=/opt/<game> CONTAINER=<game> GAME_LOG (empty = docker logs)
+4. profile.conf               Copy games/valheim/profile.conf (becomes /etc/gameserver.conf in the LXC):
+                               GAME=<game> MODE=docker DIR=/opt/<game> CONTAINER=<game> GAME_LOG (empty = docker logs)
                                DATA_DIR SAVE_SUB (relative to DIR, backed up) SECRETS_FILE=passwords.env
                                APP_ID (empty if the image updates itself) INSTALL_DIR
+                               and for auto-update: PLAYER_QUERY (a2s:<query port>[,<port>...] for Steam A2S,
+                               minecraft for rcon-cli, empty if unknown), CHECK_APP_ID (Steam dedicated-server app id
+                               used to detect new builds, empty = only check for a newer image), VERSION_CHECK
+                               (minecraft or empty)
+   install-server-commands.sh  GENERATED: run `python3 tools/build-commands.py` after adding profile.conf.
+                               Never edit it by hand; shared code lives in lib/.
 5. README.md                   Ports, passwords, and the LXC name format.
 Also add the game to the table in the root README.md.
 
@@ -28,6 +33,10 @@ Also add the game to the table in the root README.md.
   PASSWORDS and passwords.env. They are asked on first launch (empty = random) and editable later with `password` (nano).
 - Passwords are limited to A-Z a-z 0-9 _ . @ - (min 5 chars) so they are safe in env files.
 - Prefer a maintained Docker image; verify env var names against its documentation.
+- Command changes go into lib/ (common.sh, update-lxc.sh, shell-init.sh, installer.sh), then run tools/build-commands.py.
+  Commands are files in /usr/local/bin, never aliases or shell functions. Interactive-only output belongs in
+  lib/shell-init.sh. Update docs/commands.md and the GS_COMMANDS list in lib/common.sh together.
 - Native (systemd+steamcmd) is supported by the commands via MODE=native, but Docker is the default.
-- Validate: `bash -n`, `shellcheck`, `docker compose -f games/<game>/docker-compose.yml config`.
+- Validate: `python3 tools/build-commands.py --check`, `bash -n`, `shellcheck -S warning`,
+  `docker compose -f games/<game>/docker-compose.yml config`, `sudo tests/run.sh`.
 - Commit messages/docs in English; the command scripts keep the existing Swedish messages.

@@ -154,7 +154,7 @@ pct exec "$CTID" -- chmod 600 "$DIR/passwords.env"
 WORLD="${SLUG:-$GAME}"
 printf 'SERVER_NAME=%s\nWORLD_NAME=%s\n' "$HOSTNAME_CT" "$WORLD" | pct exec "$CTID" -- tee "$DIR/.env" > /dev/null
 
-pct exec "$CTID" -- bash "$DIR/install-server-commands.sh" "$GAME"
+pct exec "$CTID" -- bash "$DIR/install-server-commands.sh" "$GAME" --record-deployed
 pct exec "$CTID" -- bash -c ". /usr/local/lib/gameserver/common.sh && gs_start"
 
 if [ "$MCP" = "yes" ]
@@ -168,4 +168,4 @@ IP="$(pct exec "$CTID" -- hostname -I 2> /dev/null | awk '{print $1}')"
 echo
 echo "Done. $TITLE server '$HOSTNAME_CT' (CT $CTID) is starting at ${IP:-unknown}."
 [ "$MCP" = "yes" ] && echo "MCP server (streamable HTTP, filesystem access to /opt) at http://${IP:-unknown}:8000/mcp - LAN only, no authentication."
-echo "Enter it with: pct enter $CTID   (commands: server-help, password, serverlog, ...)"
+echo "Enter it with: pct enter $CTID   (commands: server-help, password, serverlog, update-lxc, ...)"
