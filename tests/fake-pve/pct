@@ -1,0 +1,24 @@
+#!/bin/bash
+# Fake pct for tests: logs every call; "pct exec CT -- cmd" runs cmd here (in the sandbox),
+# except the provisioning script, which needs network and is only checked for syntax.
+echo "pct $*" >> /var/log/fake-pve.log
+case "$1" in
+  status) [ -f /run/fake-ct-created ] && echo "status: running" || exit 2 ;;
+  list) echo "VMID       Status     Lock         Name" ;;
+  create) touch /run/fake-ct-created ;;
+  start) : ;;
+  exec)
+    shift 2; [ "$1" = -- ] && shift
+    if [ "$*" = "bash -s" ]
+    then
+      cat > /tmp/fake-pve-stdin.sh
+      if grep -q 'provision-lxc.sh' /tmp/fake-pve-stdin.sh
+      then
+        bash -n /tmp/fake-pve-stdin.sh && echo "(fake pct: provision-lxc.sh received, syntax ok, not run)"
+        exit $?
+      fi
+      exec bash /tmp/fake-pve-stdin.sh
+    fi
+    exec "$@"
+    ;;
+esac

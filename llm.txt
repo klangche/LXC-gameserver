@@ -6,8 +6,9 @@ plus a uniform set of in-LXC commands. One folder per game: games/<game>/ (lower
 ## Required files in games/<game>/
 1. game.conf                  Copy games/valheim/game.conf and change the values: GAME, TITLE,
                                PASSWORDS=("KEY|Label" ...), GAME_CPU/GAME_RAM/GAME_DISK.
-                               The root install.sh lists games/ automatically, asks for the game, then runs the
-                               community-scripts docker.sh with these resources and installs the game inside the LXC.
+                               The root install.sh lists games/ automatically, asks for the game, then
+                               creates the LXC with pct using these resources (no community-scripts), installs Docker with
+                               lib/provision-lxc.sh and installs the game inside the LXC.
 2. docker-compose.yml          The server. Must use `env_file: passwords.env`, take the server name from `${SERVER_NAME}`
                                (and `${WORLD_NAME}` if the game has a world name) and publish the game ports.
                                container_name must equal <game>. Bind-mount data under ./ (e.g. ./data).
@@ -28,13 +29,14 @@ Also add the game to the table in the root README.md.
 ## Rules
 - Servername is always required: the user can enter one or leave it empty for a random server name from server-names.txt. The LXC name is
   always gameserver-<game>-<servername>.
-- Docker is always installed in the LXC (community-scripts docker.sh does this).
+- Docker is always installed in the LXC (lib/provision-lxc.sh, from download.docker.com). Never use the Proxmox VE
+  community-scripts helpers.
 - EVERY password/secret the game has (join password, admin password, RCON, role passwords, tokens) must be listed in
-  PASSWORDS and passwords.env. They are asked on first launch (empty = random) and editable later with `password` (nano).
+  PASSWORDS and passwords.env. They are asked on first launch (empty = random) and editable later with `gameserver-password` (nano).
 - Passwords are limited to A-Z a-z 0-9 _ . @ - (min 5 chars) so they are safe in env files.
 - Prefer a maintained Docker image; verify env var names against its documentation.
 - Command changes go into lib/ (common.sh, update-lxc.sh, shell-init.sh, installer.sh), then run tools/build-commands.py.
-  Commands are files in /usr/local/bin, never aliases or shell functions. Interactive-only output belongs in
+  Commands are files in /usr/local/bin named gameserver-<command>, never aliases or shell functions. Interactive-only output belongs in
   lib/shell-init.sh. Update docs/commands.md and the GS_COMMANDS list in lib/common.sh together.
 - Native (systemd+steamcmd) is supported by the commands via MODE=native, but Docker is the default.
 - Validate: `python3 tools/build-commands.py --check`, `bash -n`, `shellcheck -S warning`,

@@ -6,7 +6,7 @@ legacy_setup
 cp -r "$BARE" /root/bare.git
 printf 'REPO_URL=file:///root/bare.git\nREPO_BRANCH=main\nREPO_DIR=/opt/lxc-gameserver\nBACKUP_ROOT=/var/backups/gameserver\n' > /etc/gameserver-repo.conf
 data_snapshot > /tmp/data.before
-U() { update-lxc --yes "$@" > /tmp/u.log 2>&1; echo $?; }
+U() { gameserver-update-lxc --yes "$@" > /tmp/u.log 2>&1; echo $?; }
 
 git clone -q file:///root/bare.git /opt/lxc-gameserver
 check "bootstrap dry run blocks on unknown local versions" 2 "$(bash /opt/lxc-gameserver/lib/update-lxc.sh --dry-run > /tmp/u.log 2>&1; echo $?)"
@@ -38,7 +38,7 @@ sed -i 's/start the game server|/start the game server (v2)|/' /root/work/lib/co
 : > /var/log/fake-docker.log
 check "scripts-only update" 0 "$(U)"
 check "scripts-only update: no restart" 0 "$(grep -c 'compose stop\|compose up' /var/log/fake-docker.log)"
-check "new commands active" 1 "$(server-help | grep -c '^  start .*(v2)')"
+check "new commands active" 1 "$(gameserver-help | grep -c '^  gameserver-start .*(v2)')"
 
 sed -i 's/SERVER_SLOTS=12/SERVER_SLOTS=4/' /opt/enshrouded/docker-compose.yml
 sed -i 's/SERVER_SLOTS=12/SERVER_SLOTS=10/' /root/work/games/enshrouded/docker-compose.yml; commit "slots 10"
@@ -73,6 +73,12 @@ check "no in-progress marker" no "$([ -e /var/lib/gameserver/update.inprogress ]
 revert
 check "update after the upstream fix" 0 "$(U)"
 
+# Den nya versionen av update-lxc.sh i målet tar över redan i samma körning
+sed -i 's/^ul_step() {$/ul_step() {\n  [ "$1" = "13. Result" ] \&\& echo "TARGET-VERSION-MARKER"/' /root/work/lib/update-lxc.sh
+(cd /root/work && python3 tools/build-commands.py > /dev/null); commit "update-lxc v3"
+check "newer update-lxc in the target takes over" "0 1 1" "$(U) $(grep -c 'continuing with that version' /tmp/u.log) $(grep -c TARGET-VERSION-MARKER /tmp/u.log)"
+check "log written once (no duplicate lines)" 1 "$(grep -c 'TARGET-VERSION-MARKER' /var/log/gameserver-update-lxc.log)"
+
 git -C /opt/lxc-gameserver checkout -q -b other
 check "other branch refused" 2 "$(U)"
 git -C /opt/lxc-gameserver checkout -q main
@@ -86,8 +92,9 @@ sed -i 's#^REPO_URL=.*#REPO_URL=file:///root/nope.git#' /etc/gameserver-repo.con
 check "unreachable remote: error, nothing changed" 1 "$(U)"
 sed -i 's#^REPO_URL=.*#REPO_URL=file:///root/bare.git#' /etc/gameserver-repo.conf
 
+LAST_BK=$(cat /var/lib/gameserver/last-update-backup)
 check "--rollback" 0 "$(U --rollback)"
-check "--rollback restored the previous compose" 1 "$(grep -c SERVER_SLOTS=10 /opt/enshrouded/docker-compose.yml)"
+check "--rollback restored the compose from the last backup" "$(tar -xOzf "$LAST_BK/config.tar.gz" opt/enshrouded/docker-compose.yml | md5sum)" "$(md5sum < /opt/enshrouded/docker-compose.yml)"
 
 check "settings files unchanged by later updates" 0 "$(sha256sum --quiet -c /tmp/settings.md5 > /dev/null 2>&1; echo $?)"
 data_snapshot > /tmp/data.after

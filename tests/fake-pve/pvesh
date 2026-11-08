@@ -1,0 +1,3 @@
+#!/bin/bash
+echo "pvesh $*" >> /var/log/fake-pve.log
+[ "$*" = "get /cluster/nextid" ] && echo 105

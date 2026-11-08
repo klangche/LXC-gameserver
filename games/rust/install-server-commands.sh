@@ -4,9 +4,9 @@
 # GENERATED FILE - do not edit. Edit lib/ and games/<game>/profile.conf, then run:
 #   python3 tools/build-commands.py
 #
-# Installerar samma serverkommandon på varje spel-LXC (se README "Commands"):
-#   status, serverlog, start, stop, restart, update-game (gammalt namn: update), versions,
-#   backup, password (passwords, lösenord), logs, auto-update, update-lxc, server-check, server-help
+# Installerar samma serverkommandon på varje spel-LXC (se docs/commands.md). Alla heter
+# gameserver-<kommando>: status, serverlog, start, stop, restart, update, versions, backup,
+# password, logs, auto-update, update-lxc, check, help. Äldre namn utan prefix tas bort.
 #
 # Sätter INTE upp någon spelserver och rör aldrig speldata, passwords.env eller .env.
 # Kan köras om: befintliga inställningar behålls, nya nycklar läggs till.
@@ -101,7 +101,7 @@ else
   rm -f "$NEW_CONF"
 fi
 
-# nano: password; python3: auto-update; git: update-lxc
+# nano: gameserver-password; python3: gameserver-auto-update; git: gameserver-update-lxc
 PKGS=()
 command -v nano > /dev/null 2>&1 || PKGS+=(nano)
 command -v python3 > /dev/null 2>&1 || PKGS+=(python3)
@@ -110,7 +110,7 @@ if [ "${#PKGS[@]}" -gt 0 ]
 then
   if ! { apt-get update -qq && apt-get install -y "${PKGS[@]}"; }
   then
-    echo "Varning: kunde inte installera ${PKGS[*]}. password behöver nano, auto-update python3, update-lxc git."
+    echo "Varning: kunde inte installera ${PKGS[*]}. gameserver-password behöver nano, gameserver-auto-update python3, gameserver-update-lxc git."
   fi
 fi
 
@@ -257,7 +257,7 @@ gs_docker_versions() {
   if [ -z "$APP_ID" ]
   then
     echo
-    echo "The image updates the game itself; run 'update' to pull a newer image."
+    echo "The image updates the game itself; run 'gameserver-update' to pull a newer image."
     return 0
   fi
   echo
@@ -465,7 +465,7 @@ gs_native_update() {
 
 # ---------------------------------------------------------------- auto-update
 # Inställningar i /etc/gameserver-autoupdate.conf, tillstånd i /var/lib/gameserver.
-# En systemd-timer kör "auto-update run" varje minut när auto-update är på (bara om servern körs):
+# En systemd-timer kör "gameserver-auto-update run" varje minut när auto-update är på (bara om servern körs):
 #   - var CHECK_EVERY:e minut letas efter en ny image / nytt Steam-bygge / ny Minecraft-version
 #   - finns en uppdatering körs "update" direkt (om UPDATE_WHEN_ONLINE=on), annars när
 #     servern har varit tom i IDLE_MINUTES minuter.
@@ -499,7 +499,7 @@ gs_au_load() {
 
 gs_au_save_conf() {
   cat > "$AU_CONF" <<AUEOF
-# Auto-update settings. Change them with: auto-update
+# Auto-update settings. Change them with: gameserver-auto-update
 AUTO_UPDATE=$AUTO_UPDATE
 UPDATE_WHEN_ONLINE=$UPDATE_WHEN_ONLINE
 IDLE_MINUTES=$IDLE_MINUTES
@@ -731,7 +731,7 @@ gs_autoupdate() {
       return
       ;;
     "") ;;
-    *) echo "Usage: auto-update [on|off|status|log]"; return 1 ;;
+    *) echo "Usage: gameserver-auto-update [on|off|status|log]"; return 1 ;;
   esac
 
   gs_au_status
@@ -783,23 +783,28 @@ gs_autoupdate() {
 
 # ---------------------------------------------------------------- hjälp
 
-# Alla kommandon som installeras i /usr/local/bin (namn|argument|beskrivning|exempel)
+# Alla kommandon som installeras i /usr/local/bin (namn|argument|beskrivning|exempel).
+# Alla börjar med "gameserver-" så att de aldrig krockar med systemets eller andra verktygs kommandon
+# (t.ex. /usr/bin/update från community-scripts). Skriv gameserver- och tryck Tab.
 GS_COMMANDS=(
-  "status||server status + last lines from the server log|status"
-  "serverlog||live tail of the server log (Ctrl+C to quit)|serverlog"
-  "start||start the game server|start"
-  "stop||stop the game server|stop"
-  "restart||restart the game server|restart"
-  "update-game||backup, update the game (image/files), restart (old name: update)|update-game"
-  "versions||installed vs latest game version|versions"
-  "backup||backup of the savegame to DIR/backups|backup"
-  "password||edit all passwords in nano, then run restart (also: passwords, lösenord)|password"
-  "logs||live container/system logs|logs"
-  "auto-update|[on|off|status|log]|automatic game updates; no argument = asks 3 questions|auto-update status"
-  "update-lxc|[--dry-run|--force|--rollback [DIR]|--help]|update these commands from the Git repository, data is kept|update-lxc --dry-run"
-  "server-check||check for command conflicts and startup-file problems|server-check"
-  "server-help|[--full]|this list; --full adds arguments and examples|server-help --full"
+  "gameserver-status||server status + last lines from the server log|gameserver-status"
+  "gameserver-serverlog||live tail of the server log (Ctrl+C to quit)|gameserver-serverlog"
+  "gameserver-start||start the game server|gameserver-start"
+  "gameserver-stop||stop the game server|gameserver-stop"
+  "gameserver-restart||restart the game server|gameserver-restart"
+  "gameserver-update||backup, update the game (image/files), restart|gameserver-update"
+  "gameserver-versions||installed vs latest game version|gameserver-versions"
+  "gameserver-backup||backup of the savegame to DIR/backups|gameserver-backup"
+  "gameserver-password||edit all passwords in nano, then run gameserver-restart|gameserver-password"
+  "gameserver-logs||live container/system logs|gameserver-logs"
+  "gameserver-auto-update|[on|off|status|log]|automatic game updates; no argument = asks 3 questions|gameserver-auto-update status"
+  "gameserver-update-lxc|[--dry-run|--force|--rollback [DIR]|--help]|update these commands from the Git repository, data is kept|gameserver-update-lxc --dry-run"
+  "gameserver-check||check for command conflicts and startup-file problems|gameserver-check"
+  "gameserver-help|[--full]|this list; --full adds arguments and examples|gameserver-help --full"
 )
+
+# Namn från äldre versioner (utan prefix). Installern tar bort dem om de är våra egna stubbar.
+GS_OLD_COMMANDS="start stop restart status serverlog logs update update-game versions backup password passwords lösenord auto-update update-lxc server-check server-help enshrouded-help"
 
 gs_command_names() {
   local E
@@ -807,9 +812,6 @@ gs_command_names() {
   do
     echo "${E%%|*}"
   done
-  echo update
-  echo passwords
-  echo lösenord
 }
 
 gs_help() {
@@ -823,17 +825,18 @@ gs_help() {
     DESC=${REST%%|*}; EX=${REST#*|}
     if [ "${1:-}" = --full ]
     then
-      printf '  %-12s %s\n' "$NAME" "$DESC"
-      [ -n "$ARGS" ] && printf '  %-12s   arguments: %s\n' "" "$ARGS"
-      printf '  %-12s   example:   %s\n' "" "$EX"
+      printf '  %-22s %s\n' "$NAME" "$DESC"
+      [ -n "$ARGS" ] && printf '  %-22s   arguments: %s\n' "" "$ARGS"
+      printf '  %-22s   example:   %s\n' "" "$EX"
     else
-      printf '  %-12s - %s\n' "$NAME" "$DESC"
+      printf '  %-22s - %s\n' "$NAME" "$DESC"
     fi
   done
+  echo "  Type gameserver- and press Tab to see them all."
   echo
 }
 
-# server-check: hittar alias/funktioner som skuggar kommandona, gamla startrader och
+# gameserver-check: hittar alias/funktioner som skuggar kommandona, gamla startrader och
 # skal som skriver ut något när de inte är interaktiva.
 gs_check() {
   local N T P OUT CNT F BAD=0
@@ -855,10 +858,32 @@ gs_check() {
       function) echo "  CONFLICT $N: is a shell function (defined in a startup file), /usr/local/bin/$N is not used" ;;
       builtin|keyword) echo "  CONFLICT $N: is a bash $T" ;;
       file) echo "  CONFLICT $N: runs $P instead of /usr/local/bin/$N" ;;
-      *) echo "  MISSING  $N: not found (re-run install-server-commands.sh or update-lxc)" ;;
+      *) echo "  MISSING  $N: not found (re-run install-server-commands.sh or gameserver-update-lxc)" ;;
     esac
   done
   [ "$BAD" = 0 ] && echo "  OK: every command runs /usr/local/bin/<name>"
+
+  echo
+  echo "=== Old command names and other tools ==="
+  CNT=0
+  for N in $GS_OLD_COMMANDS
+  do
+    if [ -e "/usr/local/bin/$N" ] && grep -qE '^(\. /usr/local/lib/gameserver/common.sh|exec bash /usr/local/lib/gameserver/update-lxc.sh)' "/usr/local/bin/$N" 2>/dev/null
+    then
+      BAD=1; CNT=1
+      echo "  OLD     /usr/local/bin/$N is a leftover from an older version (re-run gameserver-update-lxc)"
+    fi
+  done
+  for F in /usr/bin/update /usr/local/bin/update /etc/profile.d/*.sh
+  do
+    if [ -f "$F" ] && grep -qi 'community-scripts' "$F" 2>/dev/null
+    then
+      CNT=1
+      echo "  INFO    $F comes from the Proxmox VE community-scripts helper (not used by this project)."
+      echo "          It is left alone. Remove it yourself if you no longer want it: mv $F /root/$(basename "$F").community-scripts.bak"
+    fi
+  done
+  [ "$CNT" = 0 ] && echo "  OK: no old command names, no community-scripts files"
 
   echo
   echo "=== Startup files ==="
@@ -908,9 +933,9 @@ gs_check() {
   echo
   if [ "$BAD" = 0 ]
   then
-    echo "server-check: no problems found."
+    echo "gameserver-check: no problems found."
   else
-    echo "server-check: problems found (see above). Nothing was changed."
+    echo "gameserver-check: problems found (see above). Nothing was changed."
   fi
   return "$BAD"
 }
@@ -1022,17 +1047,17 @@ esac
 [ -z "${GS_NO_BANNER:-}" ] || return 0
 GS_BANNER_SHOWN=1
 
-if [ -x /usr/local/bin/server-help ]
+if [ -x /usr/local/bin/gameserver-help ]
 then
-  /usr/local/bin/server-help || true
+  /usr/local/bin/gameserver-help || true
 fi
 GS_EOF_INIT
 
-# update-lxc skrivs till en ny fil som sedan byter plats, så att en körande update-lxc inte påverkas
+# update-lxc.sh skrivs till en ny fil som sedan byter plats, så att en körande gameserver-update-lxc inte påverkas
 cat > "$LIB_DIR/.update-lxc.sh.new" <<'GS_EOF_UPDATE'
 #!/bin/bash
 # shellcheck disable=SC1090
-# update-lxc: updates this LXC's server commands and game compose file from the Git repository.
+# gameserver-update-lxc: updates this LXC's server commands and game compose file from the Git repository.
 #
 # Application files (from Git, replaced only after a verified backup):
 #   /opt/<game>/docker-compose.yml, /opt/<game>/install-server-commands.sh and everything that
@@ -1048,15 +1073,16 @@ cat > "$LIB_DIR/.update-lxc.sh.new" <<'GS_EOF_UPDATE'
 #   2 stopped: needs a decision (local changes, branch, data migration); nothing changed
 #   3 update failed and was rolled back       4 rollback failed: check manually (backup path printed)
 #
-# Usage: update-lxc [--dry-run] [--force] [--saves-only] [--allow-volume-change] [--yes]
-#        update-lxc --rollback [BACKUP_DIR]
-#        update-lxc --help
+# Usage: gameserver-update-lxc [--dry-run] [--force] [--saves-only] [--allow-volume-change] [--yes]
+#        gameserver-update-lxc --rollback [BACKUP_DIR]
+#        gameserver-update-lxc --help
 #
 # The whole script is one function (main) so that it can safely replace its own installed copy.
 
 main() {
   set -o pipefail
   umask 022
+  local -a ORIG_ARGS=("$@")
 
   local CONF=/etc/gameserver.conf
   local REPO_CONF=/etc/gameserver-repo.conf
@@ -1084,27 +1110,33 @@ main() {
         fi
         ;;
       --help|-h) ul_usage; return 0 ;;
-      *) echo "update-lxc: unknown option: $1 (see update-lxc --help)" >&2; return 1 ;;
+      *) echo "gameserver-update-lxc: unknown option: $1 (see gameserver-update-lxc --help)" >&2; return 1 ;;
     esac
     shift
   done
 
   if [ "$(id -u)" -ne 0 ]
   then
-    echo "update-lxc: run as root." >&2
+    echo "gameserver-update-lxc: run as root." >&2
     return 1
   fi
 
-  # All output also goes to the log, with the exit code at the end
+  # All output also goes to the log (once: a re-executed target version already writes into it)
   mkdir -p "$(dirname "$LOG")" "$STATE_DIR"
-  exec > >(tee -a "$LOG") 2>&1
-  echo
-  echo "===== update-lxc $(date '+%Y-%m-%d %H:%M:%S') ($*) ====="
+  if [ -n "${GS_UPDATE_LXC_REEXEC:-}" ]
+  then
+    rm -f -- "${BASH_SOURCE[0]}"
+    echo "  (now running gameserver-update-lxc from the target version)"
+  else
+    exec > >(tee -a "$LOG") 2>&1
+    echo
+    echo "===== gameserver-update-lxc $(date '+%Y-%m-%d %H:%M:%S') ($*) ====="
+  fi
 
   exec 8> "$LOCK"
   if ! flock -n 8
   then
-    echo "update-lxc is already running."
+    echo "gameserver-update-lxc is already running."
     return 1
   fi
 
@@ -1125,7 +1157,7 @@ main() {
   echo "  game=$GAME mode=$MODE dir=$DIR container=$CONTAINER"
   if [ "$MODE" != docker ]
   then
-    echo "  MODE=$MODE: update-lxc only supports MODE=docker so far. Nothing was changed."
+    echo "  MODE=$MODE: gameserver-update-lxc only supports MODE=docker so far. Nothing was changed."
     return 2
   fi
   if [ -z "$GAME" ] || [ ! -d "$DIR" ]
@@ -1221,7 +1253,7 @@ main() {
   then
     echo "  deployed: $(cat "$STATE_DIR/deployed.rev")"
   else
-    echo "  deployed: unknown (first update-lxc on this LXC)"
+    echo "  deployed: unknown (first gameserver-update-lxc on this LXC)"
   fi
   if ! git -C "$REPO_DIR" merge-base --is-ancestor "$CUR" "$TARGET"
   then
@@ -1236,8 +1268,23 @@ main() {
   # grep -c läser allt (grep -q kan ge SIGPIPE till git, och pipefail ser det som fel)
   if ! git -C "$REPO_DIR" show "$TARGET:games/$GAME/install-server-commands.sh" | grep -c 'update-lxc' > /dev/null
   then
-    echo "  The target version does not contain update-lxc (older than this one). Refusing to downgrade."
+    echo "  The target version does not contain gameserver-update-lxc (older than this one). Refusing to downgrade."
     return 2
+  fi
+
+  # Resten görs av update-lxc.sh från målversionen, så att dess kontroller och steg gäller direkt
+  if [ -z "${GS_UPDATE_LXC_REEXEC:-}" ]
+  then
+    local NEWSELF
+    NEWSELF=$(mktemp /tmp/gameserver-update-lxc-target.XXXXXX)
+    if git -C "$REPO_DIR" show "$TARGET:lib/update-lxc.sh" > "$NEWSELF" 2>/dev/null && bash -n "$NEWSELF" 2>/dev/null \
+      && ! cmp -s "$NEWSELF" "${BASH_SOURCE[0]}"
+    then
+      echo "  The target has a newer gameserver-update-lxc; continuing with that version."
+      exec 8>&-
+      GS_UPDATE_LXC_REEXEC=1 exec bash "$NEWSELF" "${ORIG_ARGS[@]}"
+    fi
+    rm -f -- "$NEWSELF"
   fi
 
   # ------------------------------------------------------------ 5. local changes
@@ -1271,12 +1318,12 @@ main() {
       echo "  $F: changed in the repository, not changed locally -> will be updated"
     elif [ "$FORCE" = 1 ]
     then
-      echo "  $F: differs and was not deployed by update-lxc (local change or older version)."
+      echo "  $F: differs and was not deployed by gameserver-update-lxc (local change or older version)."
       echo "      --force: it will be replaced; the current file is kept as $DIR/$F.local-<time>"
       diff -u "$DIR/$F" "$WORK/$F" | sed 's/^/      /' | head -n 80
     else
       BLOCKED=1
-      echo "  $F: differs and was not deployed by update-lxc (local change or older version):"
+      echo "  $F: differs and was not deployed by gameserver-update-lxc (local change or older version):"
       diff -u --label "installed $DIR/$F" --label "repository $F" "$DIR/$F" "$WORK/$F" | sed 's/^/      /' | head -n 120
     fi
   done
@@ -1307,7 +1354,7 @@ main() {
         echo "  --allow-volume-change given: continuing (the old folders are NOT moved or deleted)."
       else
         echo "  This is not an application update. Move the data by hand (see the README),"
-        echo "  then run: update-lxc --allow-volume-change"
+        echo "  then run: gameserver-update-lxc --allow-volume-change"
         BLOCKED=1
       fi
     fi
@@ -1324,7 +1371,7 @@ main() {
   fi
   if [ -n "$MISSING_KEYS" ]
   then
-    echo "  passwords.env lacks:$MISSING_KEYS -> add them with 'password' after the update (not done automatically)"
+    echo "  passwords.env lacks:$MISSING_KEYS -> add them with 'gameserver-password' after the update (not done automatically)"
   fi
 
   local REV_CHANGED=0
@@ -1336,7 +1383,7 @@ main() {
     echo
     echo "Stopped: the differences above need your decision. Nothing was changed."
     echo "  Keep your version:   leave it; or copy your change into the repository first."
-    echo "  Take the repository: update-lxc --force   (your files are kept as *.local-<time>)"
+    echo "  Take the repository: gameserver-update-lxc --force   (your files are kept as *.local-<time>)"
     [ "$FIRST_CLONE" = 1 ] && [ "$DRY_RUN" = 0 ] && echo "  (The clone in $REPO_DIR was created and is kept.)"
     return 2
   fi
@@ -1418,7 +1465,7 @@ main() {
       echo "Rolled back to the state before the update. Backup: $BK"
       return 3
     fi
-    echo "ROLLBACK FAILED. Restore by hand: update-lxc --rollback $BK"
+    echo "ROLLBACK FAILED. Restore by hand: gameserver-update-lxc --rollback $BK"
     return 4
   fi
 
@@ -1438,7 +1485,7 @@ main() {
       echo "Rolled back. Backup: $BK"
       return 3
     fi
-    echo "ROLLBACK FAILED. Restore by hand: update-lxc --rollback $BK"
+    echo "ROLLBACK FAILED. Restore by hand: gameserver-update-lxc --rollback $BK"
     return 4
   fi
   rm -f "$STATE_DIR/update.inprogress"
@@ -1446,28 +1493,28 @@ main() {
   # ------------------------------------------------------------ 13. report
   ul_step "13. Result"
   echo "  Updated to $(git -C "$REPO_DIR" log -1 --format='%h %s' "$TARGET")"
-  echo "  Backup: $BK   (undo: update-lxc --rollback $BK)"
-  [ -n "$MISSING_KEYS" ] && echo "  To do: add$MISSING_KEYS to passwords.env with 'password', then 'restart'"
+  echo "  Backup: $BK   (undo: gameserver-update-lxc --rollback $BK)"
+  [ -n "$MISSING_KEYS" ] && echo "  To do: add$MISSING_KEYS to passwords.env with 'gameserver-password', then 'gameserver-restart'"
   echo "  Log: $LOG"
   return 0
 }
 
 ul_usage() {
   cat <<'EOF'
-update-lxc - update the server commands of this LXC from the Git repository; game data is kept.
+gameserver-update-lxc - update the server commands of this LXC from the Git repository; game data is kept.
 
-  update-lxc                 show the plan, ask, back up, update, verify
-  update-lxc --dry-run       only show what would change (also: -n)
-  update-lxc --yes           do not ask before applying (for scripts)
-  update-lxc --force         replace files that differ from the repository; your versions
+  gameserver-update-lxc                 show the plan, ask, back up, update, verify
+  gameserver-update-lxc --dry-run       only show what would change (also: -n)
+  gameserver-update-lxc --yes           do not ask before applying (for scripts)
+  gameserver-update-lxc --force         replace files that differ from the repository; your versions
                              are kept next to them as <file>.local-<time>
-  update-lxc --saves-only    back up only the savegame instead of all game data folders
+  gameserver-update-lxc --saves-only    back up only the savegame instead of all game data folders
                              (for big games when the disk is too small for a full backup)
-  update-lxc --allow-volume-change
+  gameserver-update-lxc --allow-volume-change
                              continue although the compose file moves the game data
-  update-lxc --rollback [DIR]
+  gameserver-update-lxc --rollback [DIR]
                              restore commands and configuration from a backup made by
-                             update-lxc (default: the last one). Game data is NOT restored
+                             gameserver-update-lxc (default: the last one). Game data is NOT restored
                              automatically; the command prints how to do that.
 
 Settings: /etc/gameserver-repo.conf (REPO_URL, REPO_BRANCH, REPO_DIR, BACKUP_ROOT)
@@ -1514,7 +1561,7 @@ ul_backup() {
   do
     [ -e "$D" ] && CFG+=("${D#/}")
   done
-  for D in $(gs_cmd_list)
+  for D in $(gs_cmd_list) $(gs_old_cmd_list)
   do
     [ -e "/usr/local/bin/$D" ] && CFG+=("usr/local/bin/$D")
   done
@@ -1552,7 +1599,7 @@ ul_backup() {
     if ! tar -C "$DIR" --numeric-owner -cpzf "$BK/gamedata.tar.gz" "${DATA[@]}" >&2
     then
       echo "  tar could not read the game data completely (a running server writing files?)." >&2
-      echo "  Run 'stop' first and then update-lxc again, or use --saves-only." >&2
+      echo "  Run 'gameserver-stop' first and then gameserver-update-lxc again, or use --saves-only." >&2
       return 1
     fi
     (cd "$DIR" && find "${DATA[@]}" -xdev \( -type f -o -type l \) | LC_ALL=C sort) > "$BK/gamedata.files"
@@ -1597,7 +1644,7 @@ ul_backup() {
 ul_app_files() {
   local N
   find /usr/local/lib/gameserver -xdev \( -type f -o -type l \) 2>/dev/null
-  for N in $(gs_cmd_list)
+  for N in $(gs_cmd_list) $(gs_old_cmd_list)
   do
     [ -e "/usr/local/bin/$N" ] && echo "/usr/local/bin/$N"
   done
@@ -1608,6 +1655,13 @@ ul_app_files() {
 }
 
 gs_cmd_list() {
+  echo gameserver-start gameserver-stop gameserver-restart gameserver-status gameserver-serverlog gameserver-logs \
+    gameserver-update gameserver-versions gameserver-backup gameserver-password gameserver-auto-update \
+    gameserver-update-lxc gameserver-check gameserver-help
+}
+
+# Namn från äldre versioner: kommer med i backupen och tas bort/återställs vid en återställning
+gs_old_cmd_list() {
   echo start stop restart status serverlog logs update update-game versions backup password passwords lösenord auto-update update-lxc server-check server-help
 }
 
@@ -1747,7 +1801,7 @@ ul_verify() {
   then
     echo "  ok   non-interactive shells stay silent"
   else
-    echo "  WARN a non-interactive shell prints output; run server-check"
+    echo "  WARN a non-interactive shell prints output; run gameserver-check"
   fi
   return "$OK"
 }
@@ -1821,7 +1875,7 @@ GS_EOF_UPDATE
 chmod +x "$LIB_DIR/.update-lxc.sh.new"
 mv -f "$LIB_DIR/.update-lxc.sh.new" "$LIB_DIR/update-lxc.sh"
 
-# systemd-timer för auto-update (slås på/av av kommandot auto-update)
+# systemd-timer för auto-update (slås på/av av kommandot gameserver-auto-update)
 cat > /etc/systemd/system/gameserver-autoupdate.service <<'UNITEOF'
 [Unit]
 Description=Game server auto-update check
@@ -1829,7 +1883,7 @@ After=network-online.target docker.service
 
 [Service]
 Type=oneshot
-ExecStart=/usr/local/bin/auto-update run
+ExecStart=/usr/local/bin/gameserver-auto-update run
 UNITEOF
 
 cat > /etc/systemd/system/gameserver-autoupdate.timer <<'UNITEOF'
@@ -1854,33 +1908,44 @@ mk() {
   mv -f "$BIN/.$1.new" "$BIN/$1"
 }
 
-mk start gs_start
-mk stop gs_stop
-mk restart gs_restart
-mk status gs_status
-mk serverlog gs_serverlog
-mk logs gs_logs
-mk update-game gs_update
-mk update 'echo "(update is now called update-game; update-lxc updates the server commands)" >&2
-gs_update'
-mk versions gs_versions
-mk backup gs_backup
-mk password 'gs_secrets "Did you save? Now run: restart"'
-mk passwords 'gs_secrets "Did you save? Now run: restart"'
-mk lösenord 'gs_secrets "Sparade du? Kör nu: restart"'
-mk auto-update 'gs_autoupdate "$@"'
-mk server-check 'gs_check "$@"'
-mk server-help 'gs_help "$@"'
-printf '#!/bin/bash\nexec bash %s/update-lxc.sh "$@"\n' "$LIB_DIR" > "$BIN/.update-lxc.new"
-chmod 755 "$BIN/.update-lxc.new"
-mv -f "$BIN/.update-lxc.new" "$BIN/update-lxc"
+mk gameserver-start gs_start
+mk gameserver-stop gs_stop
+mk gameserver-restart gs_restart
+mk gameserver-status gs_status
+mk gameserver-serverlog gs_serverlog
+mk gameserver-logs gs_logs
+mk gameserver-update gs_update
+mk gameserver-versions gs_versions
+mk gameserver-backup gs_backup
+mk gameserver-password 'gs_secrets "Did you save? Now run: gameserver-restart"'
+mk gameserver-auto-update 'gs_autoupdate "$@"'
+mk gameserver-check 'gs_check "$@"'
+mk gameserver-help 'gs_help "$@"'
+printf '#!/bin/bash\nexec bash %s/update-lxc.sh "$@"\n' "$LIB_DIR" > "$BIN/.gameserver-update-lxc.new"
+chmod 755 "$BIN/.gameserver-update-lxc.new"
+mv -f "$BIN/.gameserver-update-lxc.new" "$BIN/gameserver-update-lxc"
+
+# Äldre kommandonamn utan prefix (start, update, server-help, ...). De skuggade andra verktygs
+# kommandon, t.ex. /usr/bin/update från community-scripts. Bara våra egna stubbar tas bort.
+for N in start stop restart status serverlog logs update update-game versions backup password passwords lösenord auto-update update-lxc server-check server-help
+do
+  F="$BIN/$N"
+  [ -e "$F" ] || continue
+  if grep -qE '^(\. /usr/local/lib/gameserver/common\.sh|exec bash /usr/local/lib/gameserver/update-lxc\.sh "\$@")$' "$F" && [ "$(wc -l < "$F")" -le 4 ]
+  then
+    rm -f -- "$F"
+    echo "  tog bort det gamla kommandot $N (heter nu gameserver-...)"
+  else
+    echo "  Varning: $F är inte ett av våra kommandon; lämnas orört."
+  fi
+done
 
 # Standard: auto-update på, uppdatera bara när servern har varit tom i 10 minuter.
 # En befintlig inställning behålls.
 if [ ! -f /etc/gameserver-autoupdate.conf ]
 then
   cat > /etc/gameserver-autoupdate.conf <<'AUEOF'
-# Auto-update settings. Change them with: auto-update
+# Auto-update settings. Change them with: gameserver-auto-update
 AUTO_UPDATE=on
 UPDATE_WHEN_ONLINE=off
 IDLE_MINUTES=10
@@ -1894,11 +1959,11 @@ else
   systemctl disable --now gameserver-autoupdate.timer > /dev/null 2>&1 || true
 fi
 
-# Var update-lxc hämtar uppdateringar (befintlig fil behålls)
+# Var gameserver-update-lxc hämtar uppdateringar (befintlig fil behålls)
 if [ ! -f /etc/gameserver-repo.conf ]
 then
   cat > /etc/gameserver-repo.conf <<'REPOEOF'
-# Used by update-lxc. Only change these if you run your own fork.
+# Used by gameserver-update-lxc. Only change these if you run your own fork.
 REPO_URL=https://github.com/klangche/LXC-gameserver.git
 REPO_BRANCH=main
 REPO_DIR=/opt/lxc-gameserver
@@ -1908,7 +1973,7 @@ fi
 
 # ---------------------------------------------------------------- startfiler
 # Ändrar bara exakt kända rader, sparar en kopia först och kontrollerar att filen
-# fortfarande är giltig bash. Annat lämnas orört och visas av server-check.
+# fortfarande är giltig bash. Annat lämnas orört och visas av gameserver-check.
 
 # backup_once FIL: kopia före första ändringen
 backup_once() {
@@ -1925,7 +1990,7 @@ replace_checked() {
     rm -f "$2"
     return 0
   fi
-  echo "  Varning: ändringen av $1 skulle ge ogiltig bash; filen lämnas orörd (kör server-check)."
+  echo "  Varning: ändringen av $1 skulle ge ogiltig bash; filen lämnas orörd (kör gameserver-check)."
   rm -f "$2"
   return 1
 }
@@ -1955,7 +2020,7 @@ PYFIX
     replace_checked /etc/bash.bashrc "$TMP" || true
   else
     rm -f "$TMP"
-    echo "  Varning: /etc/bash.bashrc har ett ändrat GAMESERVER_COMMANDS-block; lämnas orört (kör server-check)."
+    echo "  Varning: /etc/bash.bashrc har ett ändrat GAMESERVER_COMMANDS-block; lämnas orört (kör gameserver-check)."
   fi
 fi
 
@@ -1973,7 +2038,7 @@ then
     replace_checked /etc/bash.bashrc "$TMP" || true
   else
     rm -f "$TMP"
-    echo "  Varning: CUSTOM_CMDS-blocket i /etc/bash.bashrc har inget tydligt slut; lämnas orört (kör server-check)."
+    echo "  Varning: CUSTOM_CMDS-blocket i /etc/bash.bashrc har inget tydligt slut; lämnas orört (kör gameserver-check)."
   fi
 fi
 
@@ -2010,7 +2075,7 @@ then
       replace_checked /etc/bash.bashrc "$TMP" || true
     fi
   else
-    echo "  Varning: /etc/bash.bashrc har '$HOOK_BEGIN' utan slutmarkör; lämnas orört (kör server-check)."
+    echo "  Varning: /etc/bash.bashrc har '$HOOK_BEGIN' utan slutmarkör; lämnas orört (kör gameserver-check)."
   fi
 else
   printf '\n%s\n' "$HOOK" >> /etc/bash.bashrc
@@ -2022,7 +2087,7 @@ cat > /etc/profile.d/zz-gameserver.sh <<INITEOF
 [ -n "\${BASH_VERSION:-}" ] && [ -r $LIB_DIR/shell-init.sh ] && . $LIB_DIR/shell-init.sh
 INITEOF
 
-# Kontrollsummor för de genererade filerna (update-lxc ser då om någon ändrats för hand)
+# Kontrollsummor för de genererade filerna (gameserver-update-lxc ser då om någon ändrats för hand)
 sha256sum "$LIB_DIR/common.sh" "$LIB_DIR/gsquery.py" "$LIB_DIR/shell-init.sh" "$LIB_DIR/update-lxc.sh" \
   /etc/systemd/system/gameserver-autoupdate.service /etc/systemd/system/gameserver-autoupdate.timer \
   /etc/profile.d/zz-gameserver.sh > "$STATE_DIR/generated.sha256"
@@ -2036,4 +2101,4 @@ then
 fi
 
 echo
-echo "Klart. Öppna ett nytt skal (skriv: bash) eller kör: server-help. Kontroll: server-check"
+echo "Klart. Öppna ett nytt skal (skriv: bash) eller kör: gameserver-help. Kontroll: gameserver-check"
