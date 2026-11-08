@@ -681,7 +681,7 @@ GS_COMMANDS=(
   "gameserver-auto-update|[on|off|status|log]|automatic game updates; no argument = asks 3 questions|gameserver-auto-update status"
   "gameserver-update-lxc|[--dry-run|--force|--rollback [DIR]|--help]|update these commands from the Git repository, data is kept|gameserver-update-lxc --dry-run"
   "gameserver-check||check for command conflicts and startup-file problems|gameserver-check"
-  "gameserver-help|[--full]|this list; --full adds arguments and examples|gameserver-help --full"
+  "gameserver-help|[--full]|this list; --full adds arguments and examples (also: lxc-gameserver-help)|gameserver-help --full"
 )
 
 # Namn från äldre versioner (utan prefix). Installern tar bort dem om de är våra egna stubbar.
@@ -694,6 +694,7 @@ gs_command_names() {
     echo "${E%%|*}"
   done
   echo gameserver-passwords
+  echo lxc-gameserver-help
 }
 
 gs_help() {

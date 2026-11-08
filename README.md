@@ -42,7 +42,7 @@ Typing `bash`, opening a terminal or logging in shows the list once (`gameserver
 | `gameserver-auto-update [on\|off\|status\|log]` | automatic game updates (see below) |
 | `gameserver-update-lxc [--dry-run]` | update these commands from this repository; game data is kept |
 | `gameserver-check` | find command conflicts and startup-file problems |
-| `gameserver-help [--full]` | the list |
+| `gameserver-help [--full]` | the list (also `lxc-gameserver-help`) |
 
 ## Auto-update
 

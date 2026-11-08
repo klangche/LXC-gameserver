@@ -800,7 +800,7 @@ GS_COMMANDS=(
   "gameserver-auto-update|[on|off|status|log]|automatic game updates; no argument = asks 3 questions|gameserver-auto-update status"
   "gameserver-update-lxc|[--dry-run|--force|--rollback [DIR]|--help]|update these commands from the Git repository, data is kept|gameserver-update-lxc --dry-run"
   "gameserver-check||check for command conflicts and startup-file problems|gameserver-check"
-  "gameserver-help|[--full]|this list; --full adds arguments and examples|gameserver-help --full"
+  "gameserver-help|[--full]|this list; --full adds arguments and examples (also: lxc-gameserver-help)|gameserver-help --full"
 )
 
 # Namn från äldre versioner (utan prefix). Installern tar bort dem om de är våra egna stubbar.
@@ -813,6 +813,7 @@ gs_command_names() {
     echo "${E%%|*}"
   done
   echo gameserver-passwords
+  echo lxc-gameserver-help
 }
 
 gs_help() {
@@ -1657,7 +1658,7 @@ ul_app_files() {
 gs_cmd_list() {
   echo gameserver-start gameserver-stop gameserver-restart gameserver-status gameserver-serverlog gameserver-logs \
     gameserver-update gameserver-versions gameserver-backup gameserver-password gameserver-passwords gameserver-auto-update \
-    gameserver-update-lxc gameserver-check gameserver-help
+    gameserver-update-lxc gameserver-check gameserver-help lxc-gameserver-help
 }
 
 # Namn från äldre versioner: kommer med i backupen och tas bort/återställs vid en återställning
@@ -1922,6 +1923,7 @@ mk gameserver-passwords 'gs_secrets "Did you save? Now run: gameserver-restart"'
 mk gameserver-auto-update 'gs_autoupdate "$@"'
 mk gameserver-check 'gs_check "$@"'
 mk gameserver-help 'gs_help "$@"'
+mk lxc-gameserver-help 'gs_help "$@"'
 printf '#!/bin/bash\nexec bash %s/update-lxc.sh "$@"\n' "$LIB_DIR" > "$BIN/.gameserver-update-lxc.new"
 chmod 755 "$BIN/.gameserver-update-lxc.new"
 mv -f "$BIN/.gameserver-update-lxc.new" "$BIN/gameserver-update-lxc"

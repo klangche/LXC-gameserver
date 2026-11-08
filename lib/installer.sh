@@ -171,6 +171,7 @@ mk gameserver-passwords 'gs_secrets "Did you save? Now run: gameserver-restart"'
 mk gameserver-auto-update 'gs_autoupdate "$@"'
 mk gameserver-check 'gs_check "$@"'
 mk gameserver-help 'gs_help "$@"'
+mk lxc-gameserver-help 'gs_help "$@"'
 printf '#!/bin/bash\nexec bash %s/update-lxc.sh "$@"\n' "$LIB_DIR" > "$BIN/.gameserver-update-lxc.new"
 chmod 755 "$BIN/.gameserver-update-lxc.new"
 mv -f "$BIN/.gameserver-update-lxc.new" "$BIN/gameserver-update-lxc"

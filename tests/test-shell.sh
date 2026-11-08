@@ -51,6 +51,7 @@ do
   check "command gameserver-$N is /usr/local/bin/gameserver-$N" "/usr/local/bin/gameserver-$N" "$(type -P "gameserver-$N")"
 done
 check "gameserver-help --full shows examples" 14 "$(gameserver-help --full | grep -c 'example:')"
+check "lxc-gameserver-help is the same list" "$(gameserver-help --full | md5sum)" "$(lxc-gameserver-help --full | md5sum)"
 check "gameserver-help mentions Tab completion" 1 "$(gameserver-help | grep -c 'press Tab')"
 md5sum /etc/bash.bashrc /root/.bashrc /etc/profile.d/zz-gameserver.sh > /tmp/rc.md5
 bash "$REPO/games/enshrouded/install-server-commands.sh" enshrouded > /dev/null 2>&1

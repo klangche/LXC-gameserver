@@ -23,7 +23,7 @@ check ".env" "SERVER_NAME=gameserver-valheim-friends" "$(head -n1 /opt/valheim/.
 check "gameserver.conf written" 1 "$(grep -c '^GAME=valheim' /etc/gameserver.conf)"
 check "deployed manifest recorded" 2 "$(wc -l < /var/lib/gameserver/deployed.sha256)"
 check "server started (docker compose up)" 1 "$(grep -c 'compose up -d' /var/log/fake-docker.log)"
-for N in gameserver-status gameserver-start gameserver-update gameserver-update-lxc gameserver-check gameserver-help gameserver-auto-update gameserver-password gameserver-passwords
+for N in gameserver-status gameserver-start gameserver-update gameserver-update-lxc gameserver-check gameserver-help gameserver-auto-update gameserver-password gameserver-passwords lxc-gameserver-help
 do
   check "command $N" "/usr/local/bin/$N" "$(type -P "$N")"
 done

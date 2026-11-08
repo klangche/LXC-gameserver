@@ -21,7 +21,7 @@ functions, they work the same in a terminal, a script, cron and `ssh host <comma
 | `gameserver-auto-update` | `[on\|off\|status\|log]` | Automatic game updates. Without an argument it asks 3 questions (see the README) | `gameserver-auto-update status` |
 | `gameserver-update-lxc` | `[--dry-run] [--force] [--saves-only] [--allow-volume-change] [--yes]`, `--rollback [DIR]`, `--help` | Update these commands and the compose file from the Git repository. Game data is kept. See [update-lxc.md](update-lxc.md) | `gameserver-update-lxc --dry-run` |
 | `gameserver-check` | – | Look for aliases or functions that shadow the commands, leftovers of older versions, broken startup files, and shells that print the list twice or print anything when not interactive. Changes nothing | `gameserver-check` |
-| `gameserver-help` | `[--full]` | The command list; `--full` adds arguments and examples | `gameserver-help --full` |
+| `gameserver-help` | `[--full]` | The command list; `--full` adds arguments and examples. Same: `lxc-gameserver-help` | `gameserver-help --full` |
 
 `gameserver-update` updates the **game** (image and server files). `gameserver-update-lxc`
 updates the **server commands** of the LXC from Git. Neither touches world saves, `passwords.env`
