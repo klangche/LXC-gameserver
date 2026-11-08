@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Generated install-server-commands.sh are up to date
+        run: python3 tools/build-commands.py --check
+      - name: bash -n
+        run: for f in install.sh lib/*.sh games/*/install-server-commands.sh tests/*.sh; do bash -n "$f"; done
+      - name: shellcheck
+        run: shellcheck -S warning install.sh lib/*.sh games/*/install-server-commands.sh
+      - name: Python
+        run: python3 -m py_compile lib/gsquery.py tools/build-commands.py
+      - name: docker compose config
+        run: |
+          for f in games/*/docker-compose.yml mcp/docker-compose.yml; do
+            echo "$f"
+            SERVER_NAME=test WORLD_NAME=test docker compose -f "$f" config -q
+          done
+
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Shell startup and update-lxc tests (sandboxed)
+        run: sudo tests/run.sh
