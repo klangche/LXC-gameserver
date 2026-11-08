@@ -599,7 +599,7 @@ ul_app_files() {
 
 gs_cmd_list() {
   echo gameserver-start gameserver-stop gameserver-restart gameserver-status gameserver-serverlog gameserver-logs \
-    gameserver-update gameserver-versions gameserver-backup gameserver-password gameserver-auto-update \
+    gameserver-update gameserver-versions gameserver-backup gameserver-password gameserver-passwords gameserver-auto-update \
     gameserver-update-lxc gameserver-check gameserver-help
 }
 

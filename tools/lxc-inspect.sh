@@ -104,7 +104,7 @@ run docker images --format 'table {{.Repository}}:{{.Tag}}\t{{.ID}}\t{{.CreatedS
 section "Custom commands"
 run ls -la /usr/local/bin /usr/local/sbin
 run ls -la /usr/local/lib/gameserver
-echo; echo "--- files from the Proxmox VE community-scripts helper (not used by this project)"
+echo; echo "--- files from the Proxmox VE community-scripts helper (kept as they are)"
 grep -lis 'community-scripts' /usr/bin/update /usr/local/bin/* /etc/profile.d/*.sh /etc/motd /etc/update-motd.d/* 2>/dev/null || echo "none found"
 for f in /usr/local/bin/*
 do

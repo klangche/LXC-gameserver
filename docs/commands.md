@@ -16,11 +16,11 @@ functions, they work the same in a terminal, a script, cron and `ssh host <comma
 | `gameserver-update` | – | Back up the savegame, pull the newest image, update the game files, restart | `gameserver-update` |
 | `gameserver-versions` | – | Image date, and the installed vs latest Steam build where known | `gameserver-versions` |
 | `gameserver-backup` | – | Savegame backup to `/opt/<game>/backups/savegame-<time>.tar.gz` | `gameserver-backup` |
-| `gameserver-password` | – | Edit all passwords (`passwords.env`) in nano; run `gameserver-restart` afterwards | `gameserver-password` |
+| `gameserver-password` | – | Edit all passwords (`passwords.env`) in nano; run `gameserver-restart` afterwards. Same: `gameserver-passwords` | `gameserver-password` |
 | `gameserver-logs` | – | Live container logs (last 100 lines, then follow) | `gameserver-logs` |
 | `gameserver-auto-update` | `[on\|off\|status\|log]` | Automatic game updates. Without an argument it asks 3 questions (see the README) | `gameserver-auto-update status` |
 | `gameserver-update-lxc` | `[--dry-run] [--force] [--saves-only] [--allow-volume-change] [--yes]`, `--rollback [DIR]`, `--help` | Update these commands and the compose file from the Git repository. Game data is kept. See [update-lxc.md](update-lxc.md) | `gameserver-update-lxc --dry-run` |
-| `gameserver-check` | – | Look for aliases or functions that shadow the commands, leftovers of older versions, files from the community-scripts helper, broken startup files, and shells that print the list twice or print anything when not interactive. Changes nothing | `gameserver-check` |
+| `gameserver-check` | – | Look for aliases or functions that shadow the commands, leftovers of older versions, broken startup files, and shells that print the list twice or print anything when not interactive. Changes nothing | `gameserver-check` |
 | `gameserver-help` | `[--full]` | The command list; `--full` adds arguments and examples | `gameserver-help --full` |
 
 `gameserver-update` updates the **game** (image and server files). `gameserver-update-lxc`
@@ -30,15 +30,16 @@ or `.env`.
 ## Why the prefix
 
 Older versions installed short names: `start`, `stop`, `status`, `update`, `server-help`, and so on.
-Those collide with other tools. An LXC made by the Proxmox VE community-scripts helper has its
-own `/usr/bin/update`, which our `/usr/local/bin/update` silently hid, because `/usr/local/bin`
-comes first in `PATH`. A personal `alias update=…` in `/root/.bashrc` hid ours in turn, but only
-in interactive shells. With `gameserver-` in front, none of these can collide.
+Those collide with other tools. The LXC is created by the Proxmox VE community-scripts Docker helper,
+which installs its own `update` command (`/usr/bin/update`, its updater). Our `/usr/local/bin/update`
+silently hid it, because `/usr/local/bin` comes first in `PATH`. A personal `alias update=…` in
+`/root/.bashrc` hid ours in turn, but only in interactive shells. With `gameserver-` in front, none
+of these can collide.
 
 The installer (and so `gameserver-update-lxc`) removes the old short names, but only when the file
 is exactly one of our own small stubs. Any other file with such a name is left alone and reported.
-This project no longer uses the community-scripts helper. Its files in an older LXC, such as
-`/usr/bin/update`, are not touched: `gameserver-check` lists them, and you can remove them yourself.
+Everything the community-scripts helper installs (its `update` command, its login messages) is used
+as it is and never changed. `gameserver-check` mentions such files only as information.
 
 ## When the list is shown
 

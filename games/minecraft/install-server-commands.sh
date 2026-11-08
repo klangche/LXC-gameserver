@@ -784,8 +784,8 @@ gs_autoupdate() {
 # ---------------------------------------------------------------- hjälp
 
 # Alla kommandon som installeras i /usr/local/bin (namn|argument|beskrivning|exempel).
-# Alla börjar med "gameserver-" så att de aldrig krockar med systemets eller andra verktygs kommandon
-# (t.ex. /usr/bin/update från community-scripts). Skriv gameserver- och tryck Tab.
+# Alla börjar med "gameserver-" så att de aldrig krockar med systemets kommandon eller med dem som
+# community-scripts-helpern installerar (t.ex. dess /usr/bin/update). Skriv gameserver- och tryck Tab.
 GS_COMMANDS=(
   "gameserver-status||server status + last lines from the server log|gameserver-status"
   "gameserver-serverlog||live tail of the server log (Ctrl+C to quit)|gameserver-serverlog"
@@ -795,7 +795,7 @@ GS_COMMANDS=(
   "gameserver-update||backup, update the game (image/files), restart|gameserver-update"
   "gameserver-versions||installed vs latest game version|gameserver-versions"
   "gameserver-backup||backup of the savegame to DIR/backups|gameserver-backup"
-  "gameserver-password||edit all passwords in nano, then run gameserver-restart|gameserver-password"
+  "gameserver-password||edit all passwords in nano, then run gameserver-restart (also: gameserver-passwords)|gameserver-password"
   "gameserver-logs||live container/system logs|gameserver-logs"
   "gameserver-auto-update|[on|off|status|log]|automatic game updates; no argument = asks 3 questions|gameserver-auto-update status"
   "gameserver-update-lxc|[--dry-run|--force|--rollback [DIR]|--help]|update these commands from the Git repository, data is kept|gameserver-update-lxc --dry-run"
@@ -812,6 +812,7 @@ gs_command_names() {
   do
     echo "${E%%|*}"
   done
+  echo gameserver-passwords
 }
 
 gs_help() {
@@ -879,11 +880,10 @@ gs_check() {
     if [ -f "$F" ] && grep -qi 'community-scripts' "$F" 2>/dev/null
     then
       CNT=1
-      echo "  INFO    $F comes from the Proxmox VE community-scripts helper (not used by this project)."
-      echo "          It is left alone. Remove it yourself if you no longer want it: mv $F /root/$(basename "$F").community-scripts.bak"
+      echo "  INFO    $F belongs to the Proxmox VE community-scripts helper (left exactly as it is)."
     fi
   done
-  [ "$CNT" = 0 ] && echo "  OK: no old command names, no community-scripts files"
+  [ "$CNT" = 0 ] && echo "  OK: no old command names"
 
   echo
   echo "=== Startup files ==="
@@ -1656,7 +1656,7 @@ ul_app_files() {
 
 gs_cmd_list() {
   echo gameserver-start gameserver-stop gameserver-restart gameserver-status gameserver-serverlog gameserver-logs \
-    gameserver-update gameserver-versions gameserver-backup gameserver-password gameserver-auto-update \
+    gameserver-update gameserver-versions gameserver-backup gameserver-password gameserver-passwords gameserver-auto-update \
     gameserver-update-lxc gameserver-check gameserver-help
 }
 
@@ -1918,6 +1918,7 @@ mk gameserver-update gs_update
 mk gameserver-versions gs_versions
 mk gameserver-backup gs_backup
 mk gameserver-password 'gs_secrets "Did you save? Now run: gameserver-restart"'
+mk gameserver-passwords 'gs_secrets "Did you save? Now run: gameserver-restart"'
 mk gameserver-auto-update 'gs_autoupdate "$@"'
 mk gameserver-check 'gs_check "$@"'
 mk gameserver-help 'gs_help "$@"'
@@ -1925,8 +1926,8 @@ printf '#!/bin/bash\nexec bash %s/update-lxc.sh "$@"\n' "$LIB_DIR" > "$BIN/.game
 chmod 755 "$BIN/.gameserver-update-lxc.new"
 mv -f "$BIN/.gameserver-update-lxc.new" "$BIN/gameserver-update-lxc"
 
-# Äldre kommandonamn utan prefix (start, update, server-help, ...). De skuggade andra verktygs
-# kommandon, t.ex. /usr/bin/update från community-scripts. Bara våra egna stubbar tas bort.
+# Äldre kommandonamn utan prefix (start, update, server-help, ...). /usr/local/bin/update skuggade
+# community-scripts-helperns egen /usr/bin/update. Bara våra egna stubbar tas bort; helperns filer rörs aldrig.
 for N in start stop restart status serverlog logs update update-game versions backup password passwords lösenord auto-update update-lxc server-check server-help
 do
   F="$BIN/$N"

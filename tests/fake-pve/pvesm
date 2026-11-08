@@ -1,6 +1,0 @@
-#!/bin/bash
-echo "pvesm $*" >> /var/log/fake-pve.log
-case "$*" in
-  *rootdir*) printf 'Name Type Status Total Used Available %%\nlocal-zfs zfspool active 1 1 1 1%%\nlocal-lvm lvmthin active 1 1 1 1%%\n' ;;
-  *vztmpl*) printf 'Name Type Status Total Used Available %%\nlocal dir active 1 1 1 1%%\n' ;;
-esac

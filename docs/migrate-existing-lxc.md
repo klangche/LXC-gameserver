@@ -6,9 +6,8 @@ future updates are a single `gameserver-update-lxc`.
 
 What changes for you: all commands get the `gameserver-` prefix (`status` becomes
 `gameserver-status`, `update` becomes `gameserver-update`, `server-help` becomes `gameserver-help`, and so on;
-see [commands.md](commands.md)). The LXC no longer depends on the Proxmox VE community-scripts
-helper. Files that helper put into the LXC (for example its own `/usr/bin/update`) are left alone and
-listed by `gameserver-check`, so you can remove them yourself (step 7).
+see [commands.md](commands.md)). Everything the Proxmox VE community-scripts helper installed in the LXC
+(for example its own `update` command, `/usr/bin/update`) stays exactly as it is.
 
 Each block is one command. Run them yourself, read the output, and only go on when it looks right.
 Steps 1–3 change nothing in the LXC.
@@ -147,15 +146,8 @@ gameserver-serverlog
 Then join the server from the game, and check that your world, characters and permissions are there.
 Open a new shell (`bash`): the command list must appear exactly once.
 
-If `gameserver-check` lists files from the community-scripts helper (`INFO ... comes from the Proxmox VE
-community-scripts helper`), they are not used by this project. To stop using them, move them away
-instead of deleting them, for example:
-
-```bash
-mv /usr/bin/update /root/update.community-scripts.bak
-```
-
-Run `gameserver-check` again afterwards.
+`gameserver-check` may list files of the community-scripts helper as `INFO`. They belong to the helper
+and are left exactly as they are; nothing needs to be done about them.
 
 ## Undo
 

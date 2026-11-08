@@ -1,8 +1,10 @@
 # LXC-gameserver
 
-One-line Proxmox VE script that creates a ready-to-play game server in an LXC container. It uses only plain Proxmox tools (`pct`, `pveam`, `pvesm`) and this repository: no community-scripts helpers.
+One-line Proxmox VE scripts that create a ready-to-play game server in an LXC container. Style and idea follow the [community-scripts](https://community-scripts.org/) helper scripts (`var_cpu`, `var_ram`, `var_disk`, `var_os`).
 
-Every LXC gets **Docker** (from Docker's own apt repository, so you can add more containers later), a Docker-based game server, and the same set of management commands. They all start with `gameserver-`: type `gameserver-` and press Tab. See [docs/commands.md](docs/commands.md).
+Every LXC is created by the community-scripts Docker helper, so it gets **Docker** (so you can add more containers later), a Docker-based game server, and the same set of management commands. They all start with `gameserver-` (type `gameserver-` and press Tab). See [docs/commands.md](docs/commands.md).
+
+The community-scripts helper is used exactly as it is published: this project never changes it or anything it installs in the LXC (for example its own `update` command).
 
 ## How to use
 
@@ -15,27 +17,16 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/klangche/LXC-gameserver/
 What happens:
 
 1. **Game**: the shell asks which game (pick a number or type part of the name to filter).
-2. **Servername**: enter a name of your choice, or leave it empty to choose a random server name. Random name candidates are listed in [`server-names.txt`](server-names.txt); add one name per line to include other breeds or animals.
+2. **Settings**: CPU, RAM and disk are set for that game, then the community-scripts Docker helper (`ct/docker.sh`) is run with them, e.g. for Enshrouded:
+   `var_cpu="4" var_ram="8192" var_disk="30" var_os='debian' bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/docker.sh)"`
+   It creates the LXC with Docker. You can still adjust its settings in its own menu.
+3. **Servername**: enter a name of your choice, or leave it empty to choose a random server name. Random name candidates are listed in [`server-names.txt`](server-names.txt); add one name per line to include other breeds or animals.
    - LXC name is always `gameserver-<game>-<servername>`, e.g. `gameserver-valheim-friends` or `gameserver-valheim-whippet`.
    - The in-game server name is the LXC name.
-3. **Passwords**: every password the game has is asked (empty = random, 16 characters). Change them later with `gameserver-password` (opens all of them in nano), then run `gameserver-restart`.
-4. **LXC**: the newest Debian 12 standard template is downloaded if needed. The script shows the LXC it will create and asks once, then creates it with `pct create`. The LXC is unprivileged with `nesting=1,keyctl=1` (needed for Docker), uses the game's CPU/RAM/disk, DHCP on `vmbr0`, and starts on boot.
-5. **Docker**: [`lib/provision-lxc.sh`](lib/provision-lxc.sh) installs the base tools and Docker inside the LXC.
-6. **Install**: the game server and the `gameserver-*` commands are installed and the server is started.
+4. **Passwords**: every password the game has is asked (empty = random). Change them later with `gameserver-password` (opens all of them in nano), then run `gameserver-restart`.
+5. **Install**: the game server and the `gameserver-*` commands are installed in the LXC and started.
 
-Optional variables (put them before `bash -c`, e.g. `var_game=valheim var_ram=6144 bash -c "$(curl ...)"`):
-
-| Variable | Default | Meaning |
-|----------|---------|---------|
-| `var_game`, `var_servername` | asked | skip the questions |
-| `var_cpu`, `var_ram`, `var_disk` | from the game's `game.conf` | cores, RAM in MB, disk in GB |
-| `var_os`, `var_version` | `debian`, `12` (`ubuntu`: `24.04`) | template |
-| `var_ctid` | next free id | container id |
-| `var_storage` | `local-lvm`, else the first storage for containers | root disk storage |
-| `var_template_storage` | `local`, else the first storage for templates | template storage |
-| `var_bridge`, `var_ip`, `var_gw` | `vmbr0`, `dhcp`, – | network (`var_ip=192.168.1.50/24 var_gw=192.168.1.1` for a static address) |
-| `var_mcp` | asked | `yes`/`no`: optional MCP server (below) |
-| `var_yes` | – | `yes`: don't ask before creating the LXC |
+Optional variables: `var_game` (skip the question), `var_cpu`, `var_ram`, `var_disk` (override the game's defaults), `var_os`, `var_ctid`, `var_servername`, `var_version`, and any other variable the community-scripts helper accepts.
 
 ## Commands in the LXC
 
@@ -69,7 +60,7 @@ Also: `gameserver-auto-update on`, `off`, `status` and `log` (log file: `/var/lo
 
 ## Updating the LXC (gameserver-update-lxc)
 
-`gameserver-update-lxc` updates the commands and `docker-compose.yml` of an installed LXC from this repository. It refuses unexpected branches and remotes, stops on local changes, backs up and verifies first, and keeps all game data, `passwords.env`, `.env` and settings. It restarts only when the compose file changed, and rolls back by itself if something fails. Start with `gameserver-update-lxc --dry-run`. Details, exit codes and rollback: [docs/update-lxc.md](docs/update-lxc.md). LXCs set up before it existed (including ones made with the community-scripts helper): [docs/migrate-existing-lxc.md](docs/migrate-existing-lxc.md).
+`gameserver-update-lxc` updates the commands and `docker-compose.yml` of an installed LXC from this repository. It refuses unexpected branches and remotes, stops on local changes, backs up and verifies first, and keeps all game data, `passwords.env`, `.env` and settings. It restarts only when the compose file changed, and rolls back by itself if something fails. Start with `gameserver-update-lxc --dry-run`. Details, exit codes and rollback: [docs/update-lxc.md](docs/update-lxc.md). LXCs set up before it existed: [docs/migrate-existing-lxc.md](docs/migrate-existing-lxc.md).
 
 ## Optional MCP server
 
@@ -100,7 +91,6 @@ games/<game>/
   README.md                    game info
 lib/                           shared source of the commands (common.sh, update-lxc.sh, shell-init.sh,
                                gsquery.py, installer.sh = template of install-server-commands.sh)
-lib/provision-lxc.sh           base tools + Docker inside a new LXC (run by install.sh)
 tools/build-commands.py        generates games/*/install-server-commands.sh from lib/ + profile.conf
 tools/lxc-inspect.sh           read-only inventory of an LXC (before a migration)
 tests/                         sandboxed tests: install.sh on a fake Proxmox, shell startup, update-lxc (tests/run.sh)

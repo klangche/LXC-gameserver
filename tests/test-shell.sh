@@ -24,7 +24,7 @@ check "gameserver-check clean (own alias 'update' no longer collides)" 0 "$?"
 # community-scripts updater (from an LXC made by the Proxmox VE helper) is reported, never touched
 printf '#!/usr/bin/env bash\n# Community-Scripts update entrypoint (generated - do not edit by hand).\n' > /usr/bin/update
 gameserver-check > /tmp/sc.log 2>&1
-check "community-scripts /usr/bin/update reported as INFO, check still passes" "0 1" "$? $(grep -c 'INFO    /usr/bin/update comes from the Proxmox VE community-scripts' /tmp/sc.log)"
+check "community-scripts /usr/bin/update reported as INFO, check still passes" "0 1" "$? $(grep -c 'INFO    /usr/bin/update belongs to the Proxmox VE community-scripts helper' /tmp/sc.log)"
 check "community-scripts /usr/bin/update left in place" 1 "$(grep -c Community-Scripts /usr/bin/update)"
 bash "$REPO/games/enshrouded/install-server-commands.sh" enshrouded > /dev/null 2>&1
 check "installer leaves /usr/bin/update alone" 1 "$(grep -c Community-Scripts /usr/bin/update)"
