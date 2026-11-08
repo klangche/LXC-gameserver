@@ -4,9 +4,9 @@
 # GENERATED FILE - do not edit. Edit lib/ and games/<game>/profile.conf, then run:
 #   python3 tools/build-commands.py
 #
-# Installerar samma serverkommandon på varje spel-LXC (se README "Commands"):
-#   status, serverlog, start, stop, restart, update-game (gammalt namn: update), versions,
-#   backup, password (passwords, lösenord), logs, auto-update, update-lxc, server-check, server-help
+# Installerar samma serverkommandon på varje spel-LXC (se docs/commands.md). Alla heter
+# gameserver-<kommando>: status, serverlog, start, stop, restart, update, versions, backup,
+# password, logs, auto-update, update-lxc, check, help. Äldre namn utan prefix tas bort.
 #
 # Sätter INTE upp någon spelserver och rör aldrig speldata, passwords.env eller .env.
 # Kan köras om: befintliga inställningar behålls, nya nycklar läggs till.
@@ -89,7 +89,7 @@ else
   rm -f "$NEW_CONF"
 fi
 
-# nano: password; python3: auto-update; git: update-lxc
+# nano: gameserver-password; python3: gameserver-auto-update; git: gameserver-update-lxc
 PKGS=()
 command -v nano > /dev/null 2>&1 || PKGS+=(nano)
 command -v python3 > /dev/null 2>&1 || PKGS+=(python3)
@@ -98,7 +98,7 @@ if [ "${#PKGS[@]}" -gt 0 ]
 then
   if ! { apt-get update -qq && apt-get install -y "${PKGS[@]}"; }
   then
-    echo "Varning: kunde inte installera ${PKGS[*]}. password behöver nano, auto-update python3, update-lxc git."
+    echo "Varning: kunde inte installera ${PKGS[*]}. gameserver-password behöver nano, gameserver-auto-update python3, gameserver-update-lxc git."
   fi
 fi
 
@@ -117,14 +117,14 @@ cat > "$LIB_DIR/shell-init.sh" <<'GS_EOF_INIT'
 #@INLINE lib/shell-init.sh
 GS_EOF_INIT
 
-# update-lxc skrivs till en ny fil som sedan byter plats, så att en körande update-lxc inte påverkas
+# update-lxc.sh skrivs till en ny fil som sedan byter plats, så att en körande gameserver-update-lxc inte påverkas
 cat > "$LIB_DIR/.update-lxc.sh.new" <<'GS_EOF_UPDATE'
 #@INLINE lib/update-lxc.sh
 GS_EOF_UPDATE
 chmod +x "$LIB_DIR/.update-lxc.sh.new"
 mv -f "$LIB_DIR/.update-lxc.sh.new" "$LIB_DIR/update-lxc.sh"
 
-# systemd-timer för auto-update (slås på/av av kommandot auto-update)
+# systemd-timer för auto-update (slås på/av av kommandot gameserver-auto-update)
 cat > /etc/systemd/system/gameserver-autoupdate.service <<'UNITEOF'
 [Unit]
 Description=Game server auto-update check
@@ -132,7 +132,7 @@ After=network-online.target docker.service
 
 [Service]
 Type=oneshot
-ExecStart=/usr/local/bin/auto-update run
+ExecStart=/usr/local/bin/gameserver-auto-update run
 UNITEOF
 
 cat > /etc/systemd/system/gameserver-autoupdate.timer <<'UNITEOF'
@@ -157,33 +157,46 @@ mk() {
   mv -f "$BIN/.$1.new" "$BIN/$1"
 }
 
-mk start gs_start
-mk stop gs_stop
-mk restart gs_restart
-mk status gs_status
-mk serverlog gs_serverlog
-mk logs gs_logs
-mk update-game gs_update
-mk update 'echo "(update is now called update-game; update-lxc updates the server commands)" >&2
-gs_update'
-mk versions gs_versions
-mk backup gs_backup
-mk password 'gs_secrets "Did you save? Now run: restart"'
-mk passwords 'gs_secrets "Did you save? Now run: restart"'
-mk lösenord 'gs_secrets "Sparade du? Kör nu: restart"'
-mk auto-update 'gs_autoupdate "$@"'
-mk server-check 'gs_check "$@"'
-mk server-help 'gs_help "$@"'
-printf '#!/bin/bash\nexec bash %s/update-lxc.sh "$@"\n' "$LIB_DIR" > "$BIN/.update-lxc.new"
-chmod 755 "$BIN/.update-lxc.new"
-mv -f "$BIN/.update-lxc.new" "$BIN/update-lxc"
+mk gameserver-start gs_start
+mk gameserver-stop gs_stop
+mk gameserver-restart gs_restart
+mk gameserver-status gs_status
+mk gameserver-serverlog gs_serverlog
+mk gameserver-logs gs_logs
+mk gameserver-update gs_update
+mk gameserver-versions gs_versions
+mk gameserver-backup gs_backup
+mk gameserver-password 'gs_secrets "Did you save? Now run: gameserver-restart"'
+mk gameserver-passwords 'gs_secrets "Did you save? Now run: gameserver-restart"'
+mk gameserver-auto-update 'gs_autoupdate "$@"'
+mk gameserver-check 'gs_check "$@"'
+mk gameserver-help 'gs_help "$@"'
+mk lxc-gameserver-help 'gs_help "$@"'
+printf '#!/bin/bash\nexec bash %s/update-lxc.sh "$@"\n' "$LIB_DIR" > "$BIN/.gameserver-update-lxc.new"
+chmod 755 "$BIN/.gameserver-update-lxc.new"
+mv -f "$BIN/.gameserver-update-lxc.new" "$BIN/gameserver-update-lxc"
+
+# Äldre kommandonamn utan prefix (start, update, server-help, ...). /usr/local/bin/update skuggade
+# community-scripts-helperns egen /usr/bin/update. Bara våra egna stubbar tas bort; helperns filer rörs aldrig.
+for N in start stop restart status serverlog logs update update-game versions backup password passwords lösenord auto-update update-lxc server-check server-help
+do
+  F="$BIN/$N"
+  [ -e "$F" ] || continue
+  if grep -qE '^(\. /usr/local/lib/gameserver/common\.sh|exec bash /usr/local/lib/gameserver/update-lxc\.sh "\$@")$' "$F" && [ "$(wc -l < "$F")" -le 4 ]
+  then
+    rm -f -- "$F"
+    echo "  tog bort det gamla kommandot $N (heter nu gameserver-...)"
+  else
+    echo "  Varning: $F är inte ett av våra kommandon; lämnas orört."
+  fi
+done
 
 # Standard: auto-update på, uppdatera bara när servern har varit tom i 10 minuter.
 # En befintlig inställning behålls.
 if [ ! -f /etc/gameserver-autoupdate.conf ]
 then
   cat > /etc/gameserver-autoupdate.conf <<'AUEOF'
-# Auto-update settings. Change them with: auto-update
+# Auto-update settings. Change them with: gameserver-auto-update
 AUTO_UPDATE=on
 UPDATE_WHEN_ONLINE=off
 IDLE_MINUTES=10
@@ -197,11 +210,11 @@ else
   systemctl disable --now gameserver-autoupdate.timer > /dev/null 2>&1 || true
 fi
 
-# Var update-lxc hämtar uppdateringar (befintlig fil behålls)
+# Var gameserver-update-lxc hämtar uppdateringar (befintlig fil behålls)
 if [ ! -f /etc/gameserver-repo.conf ]
 then
   cat > /etc/gameserver-repo.conf <<'REPOEOF'
-# Used by update-lxc. Only change these if you run your own fork.
+# Used by gameserver-update-lxc. Only change these if you run your own fork.
 REPO_URL=https://github.com/klangche/LXC-gameserver.git
 REPO_BRANCH=main
 REPO_DIR=/opt/lxc-gameserver
@@ -211,7 +224,7 @@ fi
 
 # ---------------------------------------------------------------- startfiler
 # Ändrar bara exakt kända rader, sparar en kopia först och kontrollerar att filen
-# fortfarande är giltig bash. Annat lämnas orört och visas av server-check.
+# fortfarande är giltig bash. Annat lämnas orört och visas av gameserver-check.
 
 # backup_once FIL: kopia före första ändringen
 backup_once() {
@@ -228,7 +241,7 @@ replace_checked() {
     rm -f "$2"
     return 0
   fi
-  echo "  Varning: ändringen av $1 skulle ge ogiltig bash; filen lämnas orörd (kör server-check)."
+  echo "  Varning: ändringen av $1 skulle ge ogiltig bash; filen lämnas orörd (kör gameserver-check)."
   rm -f "$2"
   return 1
 }
@@ -258,7 +271,7 @@ PYFIX
     replace_checked /etc/bash.bashrc "$TMP" || true
   else
     rm -f "$TMP"
-    echo "  Varning: /etc/bash.bashrc har ett ändrat GAMESERVER_COMMANDS-block; lämnas orört (kör server-check)."
+    echo "  Varning: /etc/bash.bashrc har ett ändrat GAMESERVER_COMMANDS-block; lämnas orört (kör gameserver-check)."
   fi
 fi
 
@@ -276,7 +289,7 @@ then
     replace_checked /etc/bash.bashrc "$TMP" || true
   else
     rm -f "$TMP"
-    echo "  Varning: CUSTOM_CMDS-blocket i /etc/bash.bashrc har inget tydligt slut; lämnas orört (kör server-check)."
+    echo "  Varning: CUSTOM_CMDS-blocket i /etc/bash.bashrc har inget tydligt slut; lämnas orört (kör gameserver-check)."
   fi
 fi
 
@@ -313,7 +326,7 @@ then
       replace_checked /etc/bash.bashrc "$TMP" || true
     fi
   else
-    echo "  Varning: /etc/bash.bashrc har '$HOOK_BEGIN' utan slutmarkör; lämnas orört (kör server-check)."
+    echo "  Varning: /etc/bash.bashrc har '$HOOK_BEGIN' utan slutmarkör; lämnas orört (kör gameserver-check)."
   fi
 else
   printf '\n%s\n' "$HOOK" >> /etc/bash.bashrc
@@ -325,7 +338,7 @@ cat > /etc/profile.d/zz-gameserver.sh <<INITEOF
 [ -n "\${BASH_VERSION:-}" ] && [ -r $LIB_DIR/shell-init.sh ] && . $LIB_DIR/shell-init.sh
 INITEOF
 
-# Kontrollsummor för de genererade filerna (update-lxc ser då om någon ändrats för hand)
+# Kontrollsummor för de genererade filerna (gameserver-update-lxc ser då om någon ändrats för hand)
 sha256sum "$LIB_DIR/common.sh" "$LIB_DIR/gsquery.py" "$LIB_DIR/shell-init.sh" "$LIB_DIR/update-lxc.sh" \
   /etc/systemd/system/gameserver-autoupdate.service /etc/systemd/system/gameserver-autoupdate.timer \
   /etc/profile.d/zz-gameserver.sh > "$STATE_DIR/generated.sha256"
@@ -339,4 +352,4 @@ then
 fi
 
 echo
-echo "Klart. Öppna ett nytt skal (skriv: bash) eller kör: server-help. Kontroll: server-check"
+echo "Klart. Öppna ett nytt skal (skriv: bash) eller kör: gameserver-help. Kontroll: gameserver-check"

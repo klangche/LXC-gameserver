@@ -2,7 +2,8 @@
 # LXC-gameserver installer. Run on the Proxmox host shell (same line for every game):
 #   bash -c "$(curl -fsSL https://raw.githubusercontent.com/klangche/LXC-gameserver/main/install.sh)"
 # Asks for the game, runs the community-scripts Docker helper with the game's settings,
-# then installs the game server, passwords and management commands inside the LXC.
+# then installs the game server, passwords and the gameserver-* commands inside the LXC.
+# The helper is run exactly as community-scripts publishes it; nothing it installs is changed.
 # Optional: var_mcp (yes/no), var_game, var_cpu, var_ram, var_disk, var_os, var_ctid, var_servername, var_version, GS_RAW
 set -euo pipefail
 
@@ -102,7 +103,7 @@ do
     read -r -s -p "$label [$key] (empty = generate random): " val; echo
     if [ -z "$val" ]
     then
-      val="$(head -c 64 /dev/urandom | tr -dc 'A-Za-z0-9' | head -c 16)"
+      val="$(head -c 512 /dev/urandom | tr -dc 'A-Za-z0-9' | head -c 16)"
       echo "  generated: $val"
     fi
     if [[ "$val" =~ ^[A-Za-z0-9_.@-]{5,}$ ]]
@@ -142,7 +143,7 @@ do
 done
 
 {
-  echo "# Passwords for $TITLE. Edit with the 'password' command, then run 'restart'."
+  echo "# Passwords for $TITLE. Edit with gameserver-password, then run gameserver-restart."
   for entry in "${PASSWORDS[@]}"
   do
     key="${entry%%|*}"
@@ -168,4 +169,4 @@ IP="$(pct exec "$CTID" -- hostname -I 2> /dev/null | awk '{print $1}')"
 echo
 echo "Done. $TITLE server '$HOSTNAME_CT' (CT $CTID) is starting at ${IP:-unknown}."
 [ "$MCP" = "yes" ] && echo "MCP server (streamable HTTP, filesystem access to /opt) at http://${IP:-unknown}:8000/mcp - LAN only, no authentication."
-echo "Enter it with: pct enter $CTID   (commands: server-help, password, serverlog, update-lxc, ...)"
+echo "Enter it with: pct enter $CTID   (commands: gameserver-help, gameserver-password, gameserver-status, ...)"

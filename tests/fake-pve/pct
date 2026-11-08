@@ -1,0 +1,10 @@
+#!/bin/bash
+# Fake pct for tests: logs every call; "pct exec CT -- cmd" runs cmd here (inside the sandbox).
+echo "pct $*" >> /var/log/fake-pve.log
+case "$1" in
+  status) [ -f /run/fake-ct-created ] && echo "status: running" || exit 2 ;;
+  exec)
+    shift 2; [ "$1" = -- ] && shift
+    exec "$@"
+    ;;
+esac

@@ -138,7 +138,7 @@ gs_docker_versions() {
   if [ -z "$APP_ID" ]
   then
     echo
-    echo "The image updates the game itself; run 'update' to pull a newer image."
+    echo "The image updates the game itself; run 'gameserver-update' to pull a newer image."
     return 0
   fi
   echo
@@ -346,7 +346,7 @@ gs_native_update() {
 
 # ---------------------------------------------------------------- auto-update
 # Inställningar i /etc/gameserver-autoupdate.conf, tillstånd i /var/lib/gameserver.
-# En systemd-timer kör "auto-update run" varje minut när auto-update är på (bara om servern körs):
+# En systemd-timer kör "gameserver-auto-update run" varje minut när auto-update är på (bara om servern körs):
 #   - var CHECK_EVERY:e minut letas efter en ny image / nytt Steam-bygge / ny Minecraft-version
 #   - finns en uppdatering körs "update" direkt (om UPDATE_WHEN_ONLINE=on), annars när
 #     servern har varit tom i IDLE_MINUTES minuter.
@@ -380,7 +380,7 @@ gs_au_load() {
 
 gs_au_save_conf() {
   cat > "$AU_CONF" <<AUEOF
-# Auto-update settings. Change them with: auto-update
+# Auto-update settings. Change them with: gameserver-auto-update
 AUTO_UPDATE=$AUTO_UPDATE
 UPDATE_WHEN_ONLINE=$UPDATE_WHEN_ONLINE
 IDLE_MINUTES=$IDLE_MINUTES
@@ -612,7 +612,7 @@ gs_autoupdate() {
       return
       ;;
     "") ;;
-    *) echo "Usage: auto-update [on|off|status|log]"; return 1 ;;
+    *) echo "Usage: gameserver-auto-update [on|off|status|log]"; return 1 ;;
   esac
 
   gs_au_status
@@ -664,23 +664,28 @@ gs_autoupdate() {
 
 # ---------------------------------------------------------------- hjälp
 
-# Alla kommandon som installeras i /usr/local/bin (namn|argument|beskrivning|exempel)
+# Alla kommandon som installeras i /usr/local/bin (namn|argument|beskrivning|exempel).
+# Alla börjar med "gameserver-" så att de aldrig krockar med systemets kommandon eller med dem som
+# community-scripts-helpern installerar (t.ex. dess /usr/bin/update). Skriv gameserver- och tryck Tab.
 GS_COMMANDS=(
-  "status||server status + last lines from the server log|status"
-  "serverlog||live tail of the server log (Ctrl+C to quit)|serverlog"
-  "start||start the game server|start"
-  "stop||stop the game server|stop"
-  "restart||restart the game server|restart"
-  "update-game||backup, update the game (image/files), restart (old name: update)|update-game"
-  "versions||installed vs latest game version|versions"
-  "backup||backup of the savegame to DIR/backups|backup"
-  "password||edit all passwords in nano, then run restart (also: passwords, lösenord)|password"
-  "logs||live container/system logs|logs"
-  "auto-update|[on|off|status|log]|automatic game updates; no argument = asks 3 questions|auto-update status"
-  "update-lxc|[--dry-run|--force|--rollback [DIR]|--help]|update these commands from the Git repository, data is kept|update-lxc --dry-run"
-  "server-check||check for command conflicts and startup-file problems|server-check"
-  "server-help|[--full]|this list; --full adds arguments and examples|server-help --full"
+  "gameserver-status||server status + last lines from the server log|gameserver-status"
+  "gameserver-serverlog||live tail of the server log (Ctrl+C to quit)|gameserver-serverlog"
+  "gameserver-start||start the game server|gameserver-start"
+  "gameserver-stop||stop the game server|gameserver-stop"
+  "gameserver-restart||restart the game server|gameserver-restart"
+  "gameserver-update||backup, update the game (image/files), restart|gameserver-update"
+  "gameserver-versions||installed vs latest game version|gameserver-versions"
+  "gameserver-backup||backup of the savegame to DIR/backups|gameserver-backup"
+  "gameserver-password||edit all passwords in nano, then run gameserver-restart (also: gameserver-passwords)|gameserver-password"
+  "gameserver-logs||live container/system logs|gameserver-logs"
+  "gameserver-auto-update|[on|off|status|log]|automatic game updates; no argument = asks 3 questions|gameserver-auto-update status"
+  "gameserver-update-lxc|[--dry-run|--force|--rollback [DIR]|--help]|update these commands from the Git repository, data is kept|gameserver-update-lxc --dry-run"
+  "gameserver-check||check for command conflicts and startup-file problems|gameserver-check"
+  "gameserver-help|[--full]|this list; --full adds arguments and examples (also: lxc-gameserver-help)|gameserver-help --full"
 )
+
+# Namn från äldre versioner (utan prefix). Installern tar bort dem om de är våra egna stubbar.
+GS_OLD_COMMANDS="start stop restart status serverlog logs update update-game versions backup password passwords lösenord auto-update update-lxc server-check server-help enshrouded-help"
 
 gs_command_names() {
   local E
@@ -688,9 +693,8 @@ gs_command_names() {
   do
     echo "${E%%|*}"
   done
-  echo update
-  echo passwords
-  echo lösenord
+  echo gameserver-passwords
+  echo lxc-gameserver-help
 }
 
 gs_help() {
@@ -704,17 +708,18 @@ gs_help() {
     DESC=${REST%%|*}; EX=${REST#*|}
     if [ "${1:-}" = --full ]
     then
-      printf '  %-12s %s\n' "$NAME" "$DESC"
-      [ -n "$ARGS" ] && printf '  %-12s   arguments: %s\n' "" "$ARGS"
-      printf '  %-12s   example:   %s\n' "" "$EX"
+      printf '  %-22s %s\n' "$NAME" "$DESC"
+      [ -n "$ARGS" ] && printf '  %-22s   arguments: %s\n' "" "$ARGS"
+      printf '  %-22s   example:   %s\n' "" "$EX"
     else
-      printf '  %-12s - %s\n' "$NAME" "$DESC"
+      printf '  %-22s - %s\n' "$NAME" "$DESC"
     fi
   done
+  echo "  Type gameserver- and press Tab to see them all."
   echo
 }
 
-# server-check: hittar alias/funktioner som skuggar kommandona, gamla startrader och
+# gameserver-check: hittar alias/funktioner som skuggar kommandona, gamla startrader och
 # skal som skriver ut något när de inte är interaktiva.
 gs_check() {
   local N T P OUT CNT F BAD=0
@@ -736,10 +741,31 @@ gs_check() {
       function) echo "  CONFLICT $N: is a shell function (defined in a startup file), /usr/local/bin/$N is not used" ;;
       builtin|keyword) echo "  CONFLICT $N: is a bash $T" ;;
       file) echo "  CONFLICT $N: runs $P instead of /usr/local/bin/$N" ;;
-      *) echo "  MISSING  $N: not found (re-run install-server-commands.sh or update-lxc)" ;;
+      *) echo "  MISSING  $N: not found (re-run install-server-commands.sh or gameserver-update-lxc)" ;;
     esac
   done
   [ "$BAD" = 0 ] && echo "  OK: every command runs /usr/local/bin/<name>"
+
+  echo
+  echo "=== Old command names and other tools ==="
+  CNT=0
+  for N in $GS_OLD_COMMANDS
+  do
+    if [ -e "/usr/local/bin/$N" ] && grep -qE '^(\. /usr/local/lib/gameserver/common.sh|exec bash /usr/local/lib/gameserver/update-lxc.sh)' "/usr/local/bin/$N" 2>/dev/null
+    then
+      BAD=1; CNT=1
+      echo "  OLD     /usr/local/bin/$N is a leftover from an older version (re-run gameserver-update-lxc)"
+    fi
+  done
+  for F in /usr/bin/update /usr/local/bin/update /etc/profile.d/*.sh
+  do
+    if [ -f "$F" ] && grep -qi 'community-scripts' "$F" 2>/dev/null
+    then
+      CNT=1
+      echo "  INFO    $F belongs to the Proxmox VE community-scripts helper (left exactly as it is)."
+    fi
+  done
+  [ "$CNT" = 0 ] && echo "  OK: no old command names"
 
   echo
   echo "=== Startup files ==="
@@ -789,9 +815,9 @@ gs_check() {
   echo
   if [ "$BAD" = 0 ]
   then
-    echo "server-check: no problems found."
+    echo "gameserver-check: no problems found."
   else
-    echo "server-check: problems found (see above). Nothing was changed."
+    echo "gameserver-check: problems found (see above). Nothing was changed."
   fi
   return "$BAD"
 }

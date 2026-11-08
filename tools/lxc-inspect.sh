@@ -104,6 +104,8 @@ run docker images --format 'table {{.Repository}}:{{.Tag}}\t{{.ID}}\t{{.CreatedS
 section "Custom commands"
 run ls -la /usr/local/bin /usr/local/sbin
 run ls -la /usr/local/lib/gameserver
+echo; echo "--- files from the Proxmox VE community-scripts helper (kept as they are)"
+grep -lis 'community-scripts' /usr/bin/update /usr/local/bin/* /etc/profile.d/*.sh /etc/motd /etc/update-motd.d/* 2>/dev/null || echo "none found"
 for f in /usr/local/bin/*
 do
   [ -f "$f" ] || continue
@@ -114,7 +116,8 @@ do
   fi
 done
 echo; echo "--- what an interactive root shell runs for each command name"
-for n in start stop restart status serverlog logs update update-game versions backup password passwords lösenord auto-update update-lxc server-check server-help help enshrouded-help
+for n in gameserver-status gameserver-start gameserver-update gameserver-update-lxc gameserver-check gameserver-help \
+  start stop restart status serverlog logs update update-game versions backup password passwords lösenord auto-update update-lxc server-check server-help help enshrouded-help
 do
   printf '%-14s ' "$n"
   GS_NO_BANNER=1 bash -ic "echo __TYPE__; type -a '$n' 2>&1 | head -n 3 | tr '\n' ';'" 2>/dev/null < /dev/null | sed -n '/^__TYPE__$/,$p' | sed 1d

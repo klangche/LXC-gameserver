@@ -2,7 +2,9 @@
 
 One-line Proxmox VE scripts that create a ready-to-play game server in an LXC container. Style and idea follow the [community-scripts](https://community-scripts.org/) helper scripts (`var_cpu`, `var_ram`, `var_disk`, `var_os`).
 
-Every LXC is created by the community-scripts Docker helper, so it gets **Docker** (so you can add more containers later), a Docker-based game server, and the same set of management commands (`status`, `serverlog`, `start`, `stop`, `restart`, `update-game`, `versions`, `backup`, `password`, `logs`, `auto-update`, `update-lxc`, `server-check`, `server-help`). See [docs/commands.md](docs/commands.md).
+Every LXC is created by the community-scripts Docker helper, so it gets **Docker** (so you can add more containers later), a Docker-based game server, and the same set of management commands. They all start with `gameserver-` (type `gameserver-` and press Tab). See [docs/commands.md](docs/commands.md).
+
+The community-scripts helper is used exactly as it is published: this project never changes it or anything it installs in the LXC (for example its own `update` command).
 
 ## How to use
 
@@ -21,14 +23,30 @@ What happens:
 3. **Servername**: enter a name of your choice, or leave it empty to choose a random server name. Random name candidates are listed in [`server-names.txt`](server-names.txt); add one name per line to include other breeds or animals.
    - LXC name is always `gameserver-<game>-<servername>`, e.g. `gameserver-valheim-friends` or `gameserver-valheim-whippet`.
    - The in-game server name is the LXC name.
-4. **Passwords**: every password the game has is asked (empty = random). Change them later with `password` (opens all of them in nano), then run `restart`.
-5. **Install**: the game server and the commands are installed in the LXC and started.
+4. **Passwords**: every password the game has is asked (empty = random). Change them later with `gameserver-password` (opens all of them in nano), then run `gameserver-restart`.
+5. **Install**: the game server and the `gameserver-*` commands are installed in the LXC and started.
 
 Optional variables: `var_game` (skip the question), `var_cpu`, `var_ram`, `var_disk` (override the game's defaults), `var_os`, `var_ctid`, `var_servername`, `var_version`, and any other variable the community-scripts helper accepts.
 
+## Commands in the LXC
+
+Typing `bash`, opening a terminal or logging in shows the list once (`gameserver-help`; `gameserver-help --full` adds arguments and examples). The full reference, including when the list is shown and why the names have a prefix, is in [docs/commands.md](docs/commands.md).
+
+| Command | What it does |
+|---------|--------------|
+| `gameserver-status`, `gameserver-serverlog`, `gameserver-logs` | server status, live server log, live container log |
+| `gameserver-start`, `gameserver-stop`, `gameserver-restart` | control the game server |
+| `gameserver-update` | backup + update the game itself |
+| `gameserver-versions`, `gameserver-backup` | installed vs latest version, savegame backup |
+| `gameserver-password` | edit all passwords in nano, then `gameserver-restart` |
+| `gameserver-auto-update [on\|off\|status\|log]` | automatic game updates (see below) |
+| `gameserver-update-lxc [--dry-run]` | update these commands from this repository; game data is kept |
+| `gameserver-check` | find command conflicts and startup-file problems |
+| `gameserver-help [--full]` | the list (also `lxc-gameserver-help`) |
+
 ## Auto-update
 
-Type `auto-update` in the LXC shell. It shows the current settings and asks:
+Type `gameserver-auto-update` in the LXC shell. It shows the current settings and asks:
 
 1. **Auto-update**: ON → switch it OFF? / OFF → switch it ON?
 2. **Update even if players are online**: ON → switch it OFF? / OFF → switch it ON? ON = update even while people are playing; OFF = wait until no one has been online for the minutes in question 3.
@@ -36,28 +54,13 @@ Type `auto-update` in the LXC shell. It shows the current settings and asks:
 
 Defaults on a new server: auto-update **ON**, update even if players are online **OFF**, update after **10** minutes with no players online. Re-running the install keeps your own settings.
 
-When auto-update is on, a systemd timer (`gameserver-autoupdate.timer`) runs every minute. Every 30 minutes (`CHECK_EVERY` in `/etc/gameserver-autoupdate.conf`) it looks for a newer Docker image, a newer Steam build or a newer Minecraft release. When one is found it runs the normal `update-game` (backup first), right away or once the server has been empty for the chosen number of minutes. The player count comes from a Steam server query (A2S) on the game's query port, or from `rcon-cli list` for Minecraft. Servers you stopped yourself are left alone.
+When auto-update is on, a systemd timer (`gameserver-autoupdate.timer`) runs every minute. Every 30 minutes (`CHECK_EVERY` in `/etc/gameserver-autoupdate.conf`) it looks for a newer Docker image, a newer Steam build or a newer Minecraft release. When one is found it runs `gameserver-update` (backup first), right away or once the server has been empty for the chosen number of minutes. The player count comes from a Steam server query (A2S) on the game's query port, or from `rcon-cli list` for Minecraft. Servers you stopped yourself are left alone.
 
-Also: `auto-update on`, `auto-update off`, `auto-update status`, and `auto-update log` (log file: `/var/log/gameserver-autoupdate.log`).
+Also: `gameserver-auto-update on`, `off`, `status` and `log` (log file: `/var/log/gameserver-autoupdate.log`).
 
-## Commands in the LXC
+## Updating the LXC (gameserver-update-lxc)
 
-Typing `bash`, opening a terminal or logging in shows the list once (`server-help`; `server-help --full` adds arguments and examples). The full reference, including when the list is shown and how old banners are cleaned up, is in [docs/commands.md](docs/commands.md).
-
-| Command | What it does |
-|---------|--------------|
-| `status`, `serverlog`, `logs` | server status, live server log, live container log |
-| `start`, `stop`, `restart` | control the game server |
-| `update-game` | backup + update the game itself (old name `update` still works) |
-| `versions`, `backup` | installed vs latest version, savegame backup |
-| `password` | edit all passwords in nano, then `restart` |
-| `auto-update [on\|off\|status\|log]` | automatic game updates (see below) |
-| `update-lxc [--dry-run]` | update these commands from this repository; game data is kept |
-| `server-check` | find command conflicts and startup-file problems |
-
-## Updating the LXC (update-lxc)
-
-`update-lxc` updates the commands and `docker-compose.yml` of an installed LXC from this repository. It refuses unexpected branches and remotes, stops on local changes, backs up and verifies first, keeps all game data, `passwords.env`, `.env` and settings, restarts only when the compose file changed, and rolls back by itself if something fails. Start with `update-lxc --dry-run`. Details, exit codes and rollback: [docs/update-lxc.md](docs/update-lxc.md). LXCs set up before update-lxc existed: [docs/migrate-existing-lxc.md](docs/migrate-existing-lxc.md).
+`gameserver-update-lxc` updates the commands and `docker-compose.yml` of an installed LXC from this repository. It refuses unexpected branches and remotes, stops on local changes, backs up and verifies first, and keeps all game data, `passwords.env`, `.env` and settings. It restarts only when the compose file changed, and rolls back by itself if something fails. Start with `gameserver-update-lxc --dry-run`. Details, exit codes and rollback: [docs/update-lxc.md](docs/update-lxc.md). LXCs set up before it existed: [docs/migrate-existing-lxc.md](docs/migrate-existing-lxc.md).
 
 ## Optional MCP server
 
@@ -90,7 +93,7 @@ lib/                           shared source of the commands (common.sh, update-
                                gsquery.py, installer.sh = template of install-server-commands.sh)
 tools/build-commands.py        generates games/*/install-server-commands.sh from lib/ + profile.conf
 tools/lxc-inspect.sh           read-only inventory of an LXC (before a migration)
-tests/                         sandboxed tests of the shell startup and update-lxc (tests/run.sh)
+tests/                         sandboxed tests: install.sh on a fake Proxmox, shell startup, update-lxc (tests/run.sh)
 docs/                          commands, update-lxc, migrating an existing LXC
 mcp/docker-compose.yml         optional MCP server
 server-names.txt               random server-name candidates

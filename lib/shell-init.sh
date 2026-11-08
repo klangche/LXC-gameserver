@@ -20,7 +20,7 @@ esac
 [ -z "${GS_NO_BANNER:-}" ] || return 0
 GS_BANNER_SHOWN=1
 
-if [ -x /usr/local/bin/server-help ]
+if [ -x /usr/local/bin/gameserver-help ]
 then
-  /usr/local/bin/server-help || true
+  /usr/local/bin/gameserver-help || true
 fi
